@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M5 complete and approved
+**Status:** M6 implemented; awaiting browser verification
 
-**Current phase:** Awaiting Milestone 6
+**Current phase:** 3×3 solver worker and solution verification
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -27,7 +27,7 @@ Recommended status values:
 | M3 | Three.js 3×3 model and facelet hit mapping | Complete | M2 |
 | M4 | Palette painting and animated view navigation | Complete | M3 |
 | M5 | 3×3 validation | Complete | M4 |
-| M6 | Solver worker and verified solution generation | Not started | M5 |
+| M6 | Solver worker and verified solution generation | In progress | M5 |
 | M7 | Interactive move playback | Not started | M6 |
 | M8 | End-to-end hardening and MVP release | Not started | M7 |
 | M9 | NxN domain and notation extension for 4×4 | Not started | M8 |
@@ -378,6 +378,8 @@ M4.
 
 ## M6 — Solver Worker and verified solution generation
 
+**Status:** Implemented; real-browser worker verification and approval pending.
+
 ### Objective and expected outcome
 
 Calculate a correct 3×3 solution locally without freezing the browser and verify it before exposing it.
@@ -424,6 +426,14 @@ M5.
 - A valid 3×3 state produces a verified solution.
 - An invalid state never reaches the worker.
 - The solution is not displayed until replay verification succeeds.
+
+### Actual progress and verification
+
+- Added a pinned local solver behind an adapter and a dedicated Web Worker.
+- Added independent move replay before returning a solution, structured worker responses, editing locks, failure handling, move display, and a New Cube action.
+- The solved-state, generated-scramble, independent facelet fixture, invalid-input, corrupted-result, and UI worker-mock tests pass.
+- Type-check, lint, formatting, production build, and 31 tests pass. The existing Vite bundle-size warning remains.
+- A real-browser end-to-end worker test and responsiveness check remain to be verified. Animated playback remains M7.
 
 ---
 

@@ -4,7 +4,7 @@ CubeSolver is an offline browser application for manually recreating and solving
 
 ## Project status
 
-The architecture and implementation roadmap are approved. The 3×3 editor and state validation are complete. Solving is not implemented yet.
+The architecture and implementation roadmap are approved. The 3×3 editor and state validation are complete. A locally calculated, replay-verified solution is implemented and awaiting browser verification; move animation is not implemented yet.
 
 The initial implementation target is a complete 3×3×3 experience. Support for 4×4×4 through 20×20×20 will be added incrementally.
 

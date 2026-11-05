@@ -10,7 +10,7 @@ This file contains persistent working rules. It intentionally does not duplicate
 
 ## Current project state
 
-Milestone 5 is complete and approved. Do not implement Milestone 6 until requested by the project owner.
+Milestone 6 is implemented and awaiting browser verification and approval. Do not implement Milestone 7 until requested by the project owner. Ask for the owner's approval before writing or changing code, and explain the purpose of proposed changes.
 
 ## Scope rules
 

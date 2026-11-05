@@ -381,6 +381,7 @@ The UI, session lifecycle, palette, playback controls, and renderer contracts re
 - **ADR-007:** Session state is in memory with no persistence.
 - **ADR-008:** Cube sizes are implemented incrementally beginning with 3×3.
 - **ADR-009:** Solver dependencies are isolated behind size-specific interfaces.
+- **ADR-010:** Use `@turnwise/cube-solver` 1.0.1 (Apache-2.0, no runtime dependencies) for the initial 3×3 adapter. Its output is independently replayed before display. The package is relatively new and should be reviewed when updating dependencies.
 
 ## 18. Approval boundary
 
