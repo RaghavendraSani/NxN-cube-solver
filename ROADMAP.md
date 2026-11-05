@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M1 complete; awaiting review before M2
+**Status:** M2 complete; awaiting review before M3
 
-**Current phase:** Tooling bootstrap and empty application complete
+**Current phase:** Framework-independent 3×3 domain core complete
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -23,7 +23,7 @@ Recommended status values:
 |---|---|---|---|
 | M0 | Requirements, architecture, and project documentation | Complete | None |
 | M1 | Frontend/tooling bootstrap and empty application | Complete | M0 |
-| M2 | Framework-independent cube domain core | Not started | M1 |
+| M2 | Framework-independent cube domain core | Complete | M1 |
 | M3 | Three.js 3×3 model and facelet hit mapping | Not started | M2 |
 | M4 | Palette painting and animated view navigation | Not started | M3 |
 | M5 | 3×3 validation | Not started | M4 |
@@ -145,6 +145,8 @@ The development server was stopped after verification. Cube domain, rendering, e
 
 ## M2 — Framework-independent cube domain core
 
+**Status:** Complete; awaiting user review.
+
 ### Objective and expected outcome
 
 Implement the canonical 3×3 cube state and move mechanics without depending on React or Three.js.
@@ -188,6 +190,14 @@ M1.
 - The domain can apply and reverse all initial 3×3 face moves deterministically.
 - Tests run without a browser or renderer.
 - No UI module imports the domain implementation through rendering-specific code.
+
+### Actual progress and verification
+
+- Added logical colors, solved and unassigned states, face coordinates, normalized moves, inverse moves, immutable move application, and solved-state detection.
+- Defined face coordinates using an outward-facing row-major view and clockwise turns as viewed from outside the named face.
+- Verified all 54 coordinate round trips, all six clockwise face strips, inverse and four-turn identities, a patterned face turn, and solved-state behavior.
+- `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run format:check`, `npm.cmd test` (11 tests), and `npm.cmd run build` passed.
+- Physical solvability validation and solver integration remain future milestones.
 
 ---
 

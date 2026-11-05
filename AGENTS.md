@@ -10,7 +10,7 @@ This file contains persistent working rules. It intentionally does not duplicate
 
 ## Current project state
 
-Milestone 1 is complete and the project is awaiting approval before Milestone 2 begins. Do not implement later milestones until the current milestone is reviewed and approved.
+Milestone 2 is complete and the project is awaiting approval before Milestone 3 begins. Do not implement later milestones until the current milestone is reviewed and approved.
 
 ## Scope rules
 
