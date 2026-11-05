@@ -1,5 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../src/app/components/CubeViewport', () => ({
+  CubeViewport: () => <div>Cube viewport</div>,
+}));
 
 import { App } from '../../src/app/App';
 
@@ -8,7 +12,6 @@ describe('application shell', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'CubeSolver' })).toBeInTheDocument();
-    expect(screen.getByText(/Milestone 1/i)).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/implementation has not started/i);
+    expect(screen.getByText('Cube viewport')).toBeInTheDocument();
   });
 });

@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M2 complete; awaiting review before M3
+**Status:** M3 complete and approved
 
-**Current phase:** Framework-independent 3×3 domain core complete
+**Current phase:** Awaiting Milestone 4
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -24,7 +24,7 @@ Recommended status values:
 | M0 | Requirements, architecture, and project documentation | Complete | None |
 | M1 | Frontend/tooling bootstrap and empty application | Complete | M0 |
 | M2 | Framework-independent cube domain core | Complete | M1 |
-| M3 | Three.js 3×3 model and facelet hit mapping | Not started | M2 |
+| M3 | Three.js 3×3 model and facelet hit mapping | Complete | M2 |
 | M4 | Palette painting and animated view navigation | Not started | M3 |
 | M5 | 3×3 validation | Not started | M4 |
 | M6 | Solver worker and verified solution generation | Not started | M5 |
@@ -145,7 +145,7 @@ The development server was stopped after verification. Cube domain, rendering, e
 
 ## M2 — Framework-independent cube domain core
 
-**Status:** Complete; awaiting user review.
+**Status:** Complete and approved.
 
 ### Objective and expected outcome
 
@@ -203,6 +203,8 @@ M1.
 
 ## M3 — Three.js 3×3 model and facelet hit mapping
 
+**Status:** Complete and approved.
+
 ### Objective and expected outcome
 
 Display a fixed-camera 3×3 model with three visible faces and map clicked visible squares to canonical facelet coordinates.
@@ -244,6 +246,14 @@ M2.
 
 - The user can inspect a white 3×3 cube and click a facelet with a reliable coordinate result.
 - No click changes the logical cube state yet; this milestone proves rendering and mapping only.
+
+### Actual progress
+
+- Added a fixed-camera Three.js cube, shared facelet geometry, raycasting, resize handling, and resource disposal.
+- Added a visible facelet-coordinate readout without changing cube state.
+- Added a raycasting test covering all 27 initially visible facelet centers.
+- Type-check, lint, formatting, 12 tests, and production build pass.
+- User manually verified browser rendering, facelet selection, resize behavior, and refresh; all checks passed. Automated resource-lifecycle verification remains a future improvement.
 
 ---
 

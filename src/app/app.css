@@ -69,6 +69,17 @@ h1 {
   line-height: 1.6;
 }
 
+.cube-viewport {
+  width: 100%;
+  height: min(60vw, 25rem);
+  min-height: 16rem;
+  margin-top: 1.5rem;
+}
+
+.cube-viewport canvas {
+  display: block;
+}
+
 .status-message {
   margin: 2rem 0 0;
   padding: 0.9rem 1rem;
