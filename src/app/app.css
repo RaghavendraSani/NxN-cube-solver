@@ -80,6 +80,49 @@ h1 {
   display: block;
 }
 
+.palette,
+.view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.color-button,
+.view-controls button {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #334155;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+.color-button[aria-pressed='true'] {
+  outline: 3px solid #111827;
+  outline-offset: 2px;
+}
+.color-red {
+  background: #d22630;
+  color: white;
+}
+.color-blue {
+  background: #3777db;
+  color: white;
+}
+.color-yellow {
+  background: #ffdc00;
+}
+.color-green {
+  background: #27bd2c;
+}
+.color-white {
+  background: white;
+}
+.color-orange {
+  background: #ff7900;
+}
+.view-controls button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
 .status-message {
   margin: 2rem 0 0;
   padding: 0.9rem 1rem;

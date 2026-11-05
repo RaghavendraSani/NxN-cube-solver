@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M3 complete and approved
+**Status:** M4 complete and approved
 
-**Current phase:** Awaiting Milestone 4
+**Current phase:** Awaiting Milestone 5
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -25,7 +25,7 @@ Recommended status values:
 | M1 | Frontend/tooling bootstrap and empty application | Complete | M0 |
 | M2 | Framework-independent cube domain core | Complete | M1 |
 | M3 | Three.js 3×3 model and facelet hit mapping | Complete | M2 |
-| M4 | Palette painting and animated view navigation | Not started | M3 |
+| M4 | Palette painting and animated view navigation | Complete | M3 |
 | M5 | 3×3 validation | Not started | M4 |
 | M6 | Solver worker and verified solution generation | Not started | M5 |
 | M7 | Interactive move playback | Not started | M6 |
@@ -259,6 +259,8 @@ M2.
 
 ## M4 — Palette painting and animated view navigation
 
+**Status:** Complete and approved.
+
 ### Objective and expected outcome
 
 Implement the complete 3×3 editing workflow.
@@ -304,6 +306,14 @@ M3.
 - A user can manually reproduce a complete 3×3 scramble using the 3D editor.
 - No drag painting is possible or required.
 - The editing workflow contains no solver or layer-turn behavior.
+
+### Actual progress and verification
+
+- Added six selectable colors, single-facelet painting and recoloring, color counts, and unassigned-facelet tracking.
+- Added animated whole-cube rotation controls; input is disabled during animation.
+- Added tests for painting, repainting, intentional white, rotated picking, and rotation persistence.
+- Type-check, lint, formatting, production build, and 17 tests pass. Vite reports its existing large-bundle warning.
+- User manually verified painting, recoloring, intentional white, all-face navigation, animated rotations, color persistence during rotation, and refresh behavior; all checks passed.
 
 ---
 

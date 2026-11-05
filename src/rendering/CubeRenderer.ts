@@ -1,5 +1,14 @@
-import { PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer } from 'three';
+import {
+  PerspectiveCamera,
+  Quaternion,
+  Raycaster,
+  Scene,
+  Vector2,
+  Vector3,
+  WebGLRenderer,
+} from 'three';
 import type { FaceletAddress } from '../domain/cube/coordinates';
+import type { CubeState } from '../domain/cube/types';
 import { createCubeScene } from './cubeScene';
 import { pickFacelet } from './pickFacelet';
 
@@ -10,6 +19,7 @@ export class CubeRenderer {
   private readonly cube = createCubeScene();
   private readonly raycaster = new Raycaster();
   private readonly observer: ResizeObserver;
+  private frame: number | null = null;
 
   constructor(
     private readonly container: HTMLElement,
@@ -38,6 +48,7 @@ export class CubeRenderer {
   }
 
   private readonly handlePointer = (event: PointerEvent) => {
+    if (this.frame !== null) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
     const pointer = new Vector2(
       ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -48,7 +59,36 @@ export class CubeRenderer {
     if (address) this.onSelect(address);
   };
 
+  setState(state: CubeState) {
+    this.cube.setState(state);
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  rotate(axis: 'x' | 'y', direction: 1 | -1, onComplete: () => void): boolean {
+    if (this.frame !== null) return false;
+    const start = this.cube.group.quaternion.clone();
+    const rotation = new Quaternion().setFromAxisAngle(
+      axis === 'x' ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0),
+      (direction * Math.PI) / 2,
+    );
+    const target = rotation.multiply(start).normalize();
+    const started = performance.now();
+    const animate = (now: number) => {
+      const progress = Math.min((now - started) / 300, 1);
+      this.cube.group.quaternion.slerpQuaternions(start, target, progress);
+      this.renderer.render(this.scene, this.camera);
+      if (progress < 1) this.frame = requestAnimationFrame(animate);
+      else {
+        this.frame = null;
+        onComplete();
+      }
+    };
+    this.frame = requestAnimationFrame(animate);
+    return true;
+  }
+
   dispose() {
+    if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.observer.disconnect();
     this.renderer.domElement.removeEventListener('pointerdown', this.handlePointer);
     this.cube.dispose();

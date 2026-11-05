@@ -10,7 +10,7 @@ This file contains persistent working rules. It intentionally does not duplicate
 
 ## Current project state
 
-Milestone 3 is complete and approved. Do not implement Milestone 4 until requested by the project owner.
+Milestone 4 is complete and approved. Do not implement Milestone 5 until requested by the project owner.
 
 ## Scope rules
 
