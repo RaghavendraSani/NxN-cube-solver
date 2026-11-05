@@ -10,7 +10,7 @@ This file contains persistent working rules. It intentionally does not duplicate
 
 ## Current project state
 
-The project is in documentation and planning. Do not implement application code until the roadmap is explicitly approved.
+Milestone 1 is complete and the project is awaiting approval before Milestone 2 begins. Do not implement later milestones until the current milestone is reviewed and approved.
 
 ## Scope rules
 

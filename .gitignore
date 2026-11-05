@@ -3,6 +3,10 @@
 node_modules/
 dist/
 coverage/
+.vitest/
+playwright-report/
+test-results/
+*.tsbuildinfo
 .env
 .env.*
 __pycache__/

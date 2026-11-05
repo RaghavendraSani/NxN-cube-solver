@@ -1,7 +1,9 @@
 # CubeSolver Development Roadmap
 
-**Status:** Proposed for approval  
-**Current phase:** Documentation and planning complete; implementation not started  
+**Status:** M1 complete; awaiting review before M2
+
+**Current phase:** Tooling bootstrap and empty application complete
+
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
 ## How to use this roadmap
@@ -20,7 +22,7 @@ Recommended status values:
 | Milestone | Description | Status | Depends on |
 |---|---|---|---|
 | M0 | Requirements, architecture, and project documentation | Complete | None |
-| M1 | Frontend/tooling bootstrap and empty application | Not started | M0 |
+| M1 | Frontend/tooling bootstrap and empty application | Complete | M0 |
 | M2 | Framework-independent cube domain core | Not started | M1 |
 | M3 | Three.js 3×3 model and facelet hit mapping | Not started | M2 |
 | M4 | Palette painting and animated view navigation | Not started | M3 |
@@ -115,6 +117,29 @@ M0.
 - The browser shows a documented placeholder screen.
 - Build, type-check, lint, and test commands pass.
 - No cube behavior is claimed yet.
+
+### Actual progress
+
+- Added the TypeScript/React/Vite package and lockfile.
+- Added strict application and tooling TypeScript configurations.
+- Added the React application shell and responsive placeholder styling.
+- Added ESLint and Prettier configuration.
+- Added a Vitest/jsdom smoke test for the application shell.
+- Added Milestone 1 scripts for development, build, type-checking, linting, formatting, and tests.
+- Confirmed the Vite development server responds with HTTP 200 and serves the CubeSolver root page.
+
+### Verification completed
+
+```text
+npm.cmd run typecheck       PASS
+npm.cmd run lint            PASS
+npm.cmd run format:check    PASS
+npm.cmd test                PASS (1 test)
+npm.cmd run build           PASS
+npm.cmd run dev             PASS (HTTP 200 at http://127.0.0.1:5173/)
+```
+
+The development server was stopped after verification. Cube domain, rendering, editing, validation, solver, and playback work remain for later milestones.
 
 ---
 
