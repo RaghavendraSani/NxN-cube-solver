@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M4 complete and approved
+**Status:** M5 complete and approved
 
-**Current phase:** Awaiting Milestone 5
+**Current phase:** Awaiting Milestone 6
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -26,7 +26,7 @@ Recommended status values:
 | M2 | Framework-independent cube domain core | Complete | M1 |
 | M3 | Three.js 3×3 model and facelet hit mapping | Complete | M2 |
 | M4 | Palette painting and animated view navigation | Complete | M3 |
-| M5 | 3×3 validation | Not started | M4 |
+| M5 | 3×3 validation | Complete | M4 |
 | M6 | Solver worker and verified solution generation | Not started | M5 |
 | M7 | Interactive move playback | Not started | M6 |
 | M8 | End-to-end hardening and MVP release | Not started | M7 |
@@ -319,6 +319,8 @@ M3.
 
 ## M5 — 3×3 validation
 
+**Status:** Complete and approved.
+
 ### Objective and expected outcome
 
 Reject incomplete or physically impossible 3×3 states and allow only valid states to proceed.
@@ -363,6 +365,14 @@ M4.
 
 - The validator accepts a comprehensive legal-state fixture set and rejects an intentional invalid-state fixture set.
 - Invalid input produces the required generic message and preserves editing.
+
+### Actual progress and verification
+
+- Added completeness, color-count, fixed-center, piece identity, corner orientation, edge orientation, and permutation-parity checks.
+- Added the Solve button with the specified invalid-state message; valid input is acknowledged without running a solver.
+- Tested 1,200 successive legal moves and targeted impossible configurations, plus invalid and valid UI paths.
+- Type-check, lint, formatting, 26 tests, and production build pass. The existing Vite bundle-size warning remains.
+- User manually verified the validation workflow and approved the milestone; solver execution remains M6.
 
 ---
 

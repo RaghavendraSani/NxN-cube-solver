@@ -8,13 +8,16 @@ import {
 } from '../domain/cube/inputState';
 import type { FaceletAddress } from '../domain/cube/coordinates';
 import { CubeViewport } from './components/CubeViewport';
+import { validateCube } from '../domain/validation/validateCube';
 
 export function App() {
   const [cube, setCube] = useState(createUnassignedCube);
   const [selectedColor, setSelectedColor] = useState<PaletteColor>('red');
+  const [validation, setValidation] = useState<'valid' | 'invalid' | null>(null);
   const counts = countColors(cube);
   function paint(address: FaceletAddress) {
     setCube((current) => paintFacelet(current, address, selectedColor));
+    setValidation(null);
   }
   return (
     <main className="app-shell">
@@ -23,6 +26,7 @@ export function App() {
         <p className="welcome-copy">
           Choose a color, then click a square. Rotate the cube to reach each face.
         </p>
+        <p>Start with white on top, green in front, and red on the right.</p>
         <div className="palette" aria-label="Color palette">
           {PALETTE_COLORS.map((color) => (
             <button
@@ -38,6 +42,18 @@ export function App() {
         </div>
         <CubeViewport state={cube} onSelect={paint} />
         <p role="status">{counts.unassigned} squares remaining to assign.</p>
+        <button
+          type="button"
+          onClick={() => setValidation(validateCube(cube).valid ? 'valid' : 'invalid')}
+        >
+          Solve
+        </button>
+        {validation === 'invalid' && <p role="alert">Invalid state. Try again.</p>}
+        {validation === 'valid' && (
+          <p role="status">
+            Valid cube. Solution calculation will be available in the next milestone.
+          </p>
+        )}
       </section>
     </main>
   );
