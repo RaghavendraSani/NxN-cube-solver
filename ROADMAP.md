@@ -1,0 +1,619 @@
+# CubeSolver Development Roadmap
+
+**Status:** Proposed for approval  
+**Current phase:** Documentation and planning complete; implementation not started  
+**Release strategy:** 3×3 vertical slice first, then incremental larger cubes
+
+## How to use this roadmap
+
+Each milestone must produce a testable result. A milestone is complete only when its implementation steps, tests, acceptance criteria, and documentation updates are complete.
+
+Recommended status values:
+
+- `Not started`
+- `In progress`
+- `Blocked`
+- `Complete`
+
+## Progress tracker
+
+| Milestone | Description | Status | Depends on |
+|---|---|---|---|
+| M0 | Requirements, architecture, and project documentation | Complete | None |
+| M1 | Frontend/tooling bootstrap and empty application | Not started | M0 |
+| M2 | Framework-independent cube domain core | Not started | M1 |
+| M3 | Three.js 3×3 model and facelet hit mapping | Not started | M2 |
+| M4 | Palette painting and animated view navigation | Not started | M3 |
+| M5 | 3×3 validation | Not started | M4 |
+| M6 | Solver worker and verified solution generation | Not started | M5 |
+| M7 | Interactive move playback | Not started | M6 |
+| M8 | End-to-end hardening and MVP release | Not started | M7 |
+| M9 | NxN domain and notation extension for 4×4 | Not started | M8 |
+| M10 | 4×4 solving, parity, and playback | Not started | M9 |
+| M11 | 5×5 and generalized reduction foundations | Not started | M10 |
+| M12 | Larger-cube performance and 6×6–20×20 expansion | Not started | M11 |
+
+---
+
+## M0 — Documentation and architecture baseline
+
+**Status:** Complete
+
+### Objective and outcome
+
+Record the approved requirements, architecture, development conventions, and roadmap before implementation begins.
+
+### Features and deliverables
+
+- `README.md`.
+- `REQUIREMENTS.md`.
+- `ARCHITECTURE.md`.
+- `ROADMAP.md`.
+- `AGENTS.md`.
+- Existing `.gitignore` reviewed.
+
+### Dependencies
+
+None.
+
+### Validation
+
+- All documents agree on the offline browser scope.
+- All documents identify 3×3 as the first implementation.
+- No implementation code is introduced.
+
+### Acceptance criteria
+
+- A new contributor can understand the goal, constraints, architecture, and next milestone from the documentation.
+
+---
+
+## M1 — Tooling bootstrap and empty application
+
+### Objective and expected outcome
+
+Create a reproducible TypeScript/React/Vite application that builds, runs locally, and has automated quality checks, but does not yet implement cube logic.
+
+### Planned files and modules
+
+- `package.json` and lockfile.
+- `index.html`.
+- `src/main.tsx`.
+- `src/app/App.tsx`.
+- `src/app/app.css`.
+- `tsconfig*.json`.
+- `vite.config.ts`.
+- `eslint.config.*`.
+- Prettier configuration.
+- `vitest.config.ts`.
+- `tests/smoke/`.
+- Optional initial CI workflow under `.github/workflows/`.
+
+### Dependencies
+
+M0.
+
+### Implementation order
+
+1. Initialize the package manifest and lockfile.
+2. Add React, TypeScript, Vite, test, lint, and formatting tooling.
+3. Configure strict TypeScript and consistent module boundaries.
+4. Create the application entry point and minimal layout.
+5. Add scripts for development, build, type-checking, linting, and tests.
+6. Add the first CI check if repository hosting is ready.
+
+### Testing and validation
+
+- Start the development server.
+- Run the production build.
+- Run type-checking and linting.
+- Run one smoke test that mounts the application.
+
+### Acceptance criteria
+
+- A clean checkout can install dependencies and start the app.
+- The browser shows a documented placeholder screen.
+- Build, type-check, lint, and test commands pass.
+- No cube behavior is claimed yet.
+
+---
+
+## M2 — Framework-independent cube domain core
+
+### Objective and expected outcome
+
+Implement the canonical 3×3 cube state and move mechanics without depending on React or Three.js.
+
+### Planned files and modules
+
+- `src/domain/cube/types.ts`.
+- `src/domain/cube/colors.ts`.
+- `src/domain/cube/faces.ts`.
+- `src/domain/cube/state.ts`.
+- `src/domain/cube/moves.ts`.
+- `src/domain/cube/applyMove.ts`.
+- `src/domain/cube/isSolved.ts`.
+- `src/domain/cube/coordinates.ts`.
+- `tests/unit/domain/cube/`.
+
+### Dependencies
+
+M1.
+
+### Implementation order
+
+1. Define logical colors, including `Unassigned`.
+2. Define the fixed face order and row/column conventions.
+3. Define immutable or safely cloned cube-state operations.
+4. Define normalized move objects for quarter turns and half turns.
+5. Implement face-turn permutations.
+6. Implement solved-state detection.
+7. Add inverse-move support for tests.
+
+### Testing and validation
+
+- A solved cube is recognized as solved.
+- Applying a move four times restores the original state.
+- Applying a move followed by its inverse restores the original state.
+- Known move sequences produce expected facelet states.
+- All face orientations and row/column mappings have direct tests.
+
+### Acceptance criteria
+
+- The domain can apply and reverse all initial 3×3 face moves deterministically.
+- Tests run without a browser or renderer.
+- No UI module imports the domain implementation through rendering-specific code.
+
+---
+
+## M3 — Three.js 3×3 model and facelet hit mapping
+
+### Objective and expected outcome
+
+Display a fixed-camera 3×3 model with three visible faces and map clicked visible squares to canonical facelet coordinates.
+
+### Planned files and modules
+
+- `src/rendering/ThreeScene.ts`.
+- `src/rendering/CubeRenderer.ts`.
+- `src/rendering/CameraController.ts`.
+- `src/rendering/faceletMeshes.ts`.
+- `src/rendering/raycasting.ts`.
+- `src/rendering/rendererTypes.ts`.
+- `src/app/components/CubeViewport.tsx`.
+- `tests/unit/rendering/`.
+- Browser smoke tests under `tests/e2e/`.
+
+### Dependencies
+
+M2.
+
+### Implementation order
+
+1. Create a Three.js scene, fixed camera, renderer, lights, and canvas lifecycle.
+2. Render the white 3×3 cube with visible facelet boundaries.
+3. Assign stable metadata to each clickable facelet.
+4. Implement pointer coordinate conversion and raycasting.
+5. Map a hit through the current display orientation to canonical coordinates.
+6. Add resize handling and renderer disposal.
+
+### Testing and validation
+
+- Browser opens the scene without console errors.
+- Three faces are visible at the expected initial orientation.
+- Clicking each visible square reports the correct canonical coordinate.
+- Resizing the browser does not distort or break hit testing.
+- Renderer cleanup does not leak canvases or animation loops.
+
+### Acceptance criteria
+
+- The user can inspect a white 3×3 cube and click a facelet with a reliable coordinate result.
+- No click changes the logical cube state yet; this milestone proves rendering and mapping only.
+
+---
+
+## M4 — Palette painting and animated view navigation
+
+### Objective and expected outcome
+
+Implement the complete 3×3 editing workflow.
+
+### Planned files and modules
+
+- `src/app/components/Palette.tsx`.
+- `src/app/components/ViewControls.tsx`.
+- `src/app/components/EditorStatus.tsx`.
+- `src/app/session/sessionState.ts`.
+- `src/app/session/sessionReducer.ts`.
+- `src/app/session/commands.ts`.
+- `src/rendering/ViewRotationController.ts`.
+- `src/domain/cube/inputState.ts`.
+- Tests for session transitions and painting.
+
+### Dependencies
+
+M3.
+
+### Implementation order
+
+1. Add six fixed palette buttons and selected-color state.
+2. Connect facelet hits to single-square painting.
+3. Ensure recoloring replaces the previous value.
+4. Keep unassigned and white values distinct.
+5. Add fixed-camera cube-group rotations.
+6. Animate 90-degree view rotations and update visible-face orientation.
+7. Allow access to all six faces.
+8. Add completeness/count indicators without adding persistence.
+
+### Testing and validation
+
+- Clicking a square changes only that square.
+- Repainting changes only the selected square.
+- Rotation changes the visible faces but not the logical colors.
+- Repeated view rotations return to the original orientation.
+- All six faces can be painted.
+- Refreshing the page does not restore the entry.
+
+### Acceptance criteria
+
+- A user can manually reproduce a complete 3×3 scramble using the 3D editor.
+- No drag painting is possible or required.
+- The editing workflow contains no solver or layer-turn behavior.
+
+---
+
+## M5 — 3×3 validation
+
+### Objective and expected outcome
+
+Reject incomplete or physically impossible 3×3 states and allow only valid states to proceed.
+
+### Planned files and modules
+
+- `src/domain/validation/validationTypes.ts`.
+- `src/domain/validation/validateCompleteness.ts`.
+- `src/domain/validation/validateColorCounts.ts`.
+- `src/domain/validation/validateCenters.ts`.
+- `src/domain/validation/faceletsToPieces.ts`.
+- `src/domain/validation/validatePieces.ts`.
+- `src/app/components/ValidationMessage.tsx`.
+- `tests/unit/domain/validation/`.
+
+### Dependencies
+
+M4.
+
+### Implementation order
+
+1. Reject unassigned facelets.
+2. Validate nine instances of each color.
+3. Validate the fixed center arrangement.
+4. Extract and identify corner pieces.
+5. Extract and identify edge pieces.
+6. Check corner orientation, edge orientation, and permutation parity.
+7. Connect validation to the Solve action.
+8. Display only `Invalid state. Try again.` for invalid input.
+
+### Testing and validation
+
+- Solved state is valid.
+- Known legal scrambles are valid.
+- Missing facelets are invalid.
+- Wrong color counts are invalid.
+- Swapped single pieces are invalid where parity rules reject them.
+- Twisted corners and flipped edges are invalid.
+- The UI does not start solving for invalid input.
+
+### Acceptance criteria
+
+- The validator accepts a comprehensive legal-state fixture set and rejects an intentional invalid-state fixture set.
+- Invalid input produces the required generic message and preserves editing.
+
+---
+
+## M6 — Solver Worker and verified solution generation
+
+### Objective and expected outcome
+
+Calculate a correct 3×3 solution locally without freezing the browser and verify it before exposing it.
+
+### Planned files and modules
+
+- `src/solver/Solver.ts`.
+- `src/solver/SolverResult.ts`.
+- `src/solver/threeByThreeSolverAdapter.ts`.
+- `src/solver/solverInputConversion.ts`.
+- `src/solver/solutionVerifier.ts`.
+- `src/workers/solver.worker.ts`.
+- `src/app/components/SolveStatus.tsx`.
+- `src/app/components/MoveList.tsx`.
+- `tests/unit/solver/`.
+- `tests/integration/solver-worker/`.
+
+### Dependencies
+
+M5.
+
+### Implementation order
+
+1. Select and pin the 3×3 solver dependency or implement the first solver adapter.
+2. Convert canonical facelets into the solver representation.
+3. Convert solver output into internal move objects.
+4. Implement the replay verifier.
+5. Move solving into a Web Worker.
+6. Lock editing controls while solving.
+7. Expose only verified solutions to the UI.
+8. Handle worker failure without exposing cancellation.
+
+### Testing and validation
+
+- Solved state returns an empty solution or equivalent completed result.
+- Known scrambles produce solutions that replay to solved.
+- Facelet mapping is tested against independently constructed fixtures.
+- The worker returns structured success and failure messages.
+- The main thread remains responsive during solving.
+- A deliberately corrupted solver result is rejected by verification.
+
+### Acceptance criteria
+
+- A valid 3×3 state produces a verified solution.
+- An invalid state never reaches the worker.
+- The solution is not displayed until replay verification succeeds.
+
+---
+
+## M7 — Interactive move playback
+
+### Objective and expected outcome
+
+Turn a verified move list into a guided, one-move-at-a-time 3D solving experience.
+
+### Planned files and modules
+
+- `src/playback/playbackState.ts`.
+- `src/playback/playbackController.ts`.
+- `src/rendering/LayerAnimationController.ts`.
+- `src/rendering/moveHighlight.ts`.
+- `src/app/components/PlaybackControls.tsx`.
+- `src/app/components/MoveIndicator.tsx`.
+- `src/app/components/DirectionArrow.tsx`.
+- `tests/unit/playback/`.
+- `tests/e2e/playback/`.
+
+### Dependencies
+
+M6.
+
+### Implementation order
+
+1. Display the full move list and current index.
+2. Define the affected layer for each normalized move.
+3. Highlight the affected face/layer and direction.
+4. Animate exactly one move on `Next`.
+5. Commit the logical move after animation completion.
+6. Disable `Next` during animation.
+7. Add adjustable animation speed.
+8. Detect the final solved state and expose `New Cube`.
+
+### Testing and validation
+
+- One click advances exactly one move.
+- A second click during animation cannot skip a move.
+- The visual state and domain state agree after every move.
+- Move indicators and arrows match the normalized move.
+- Speed changes affect duration but not the move order.
+- The final state is solved.
+
+### Acceptance criteria
+
+- A user can follow a complete 3×3 solution interactively from scramble to solved digital cube.
+- Playback is not a passive video and never advances multiple moves at once.
+
+---
+
+## M8 — End-to-end hardening and 3×3 MVP release
+
+### Objective and expected outcome
+
+Make the 3×3 vertical slice reliable, documented, and distributable.
+
+### Planned files and modules
+
+- Updates to all previous modules.
+- `tests/e2e/complete-solve.spec.ts`.
+- `tests/fixtures/cubes/`.
+- `.github/workflows/ci.yml`.
+- Deployment/build documentation in `README.md`.
+- Optional `LICENSE` after project-owner decision.
+
+### Dependencies
+
+M7.
+
+### Implementation order
+
+1. Add a fixture suite of known legal and invalid states.
+2. Run unit, integration, and browser tests in CI.
+3. Test current Chromium, Firefox, and WebKit targets.
+4. Profile rendering and solve latency.
+5. Test refresh, browser resize, and WebGL initialization failure paths.
+6. Review dependencies and licenses.
+7. Build and smoke-test the production artifact.
+8. Update documentation and mark the 3×3 MVP complete.
+
+### Testing and validation
+
+- Full automated suite passes from a clean checkout.
+- Production build runs without a development server.
+- Complete user flow works on supported browsers.
+- No runtime network request is required.
+- No incomplete state is persisted.
+
+### Acceptance criteria
+
+- The 3×3 MVP meets every requirement in the MVP section of `REQUIREMENTS.md`.
+- A friend can clone the repository, follow the setup instructions, and run the application.
+
+---
+
+## M9 — NxN domain and notation extension for 4×4
+
+### Objective and expected outcome
+
+Generalize the logical state, move model, renderer contracts, and UI size selection for 4×4 without claiming that solving is complete yet.
+
+### Planned files and modules
+
+- `src/domain/nxn/`.
+- Generalized coordinate and move modules.
+- 4×4 rendering configuration.
+- Extended notation formatter/parser.
+- Size capability registry.
+- New unit fixtures.
+
+### Dependencies
+
+M8.
+
+### Implementation order
+
+1. Generalize facelet dimensions from fixed 3 to `N`.
+2. Introduce 4×4-capable move and layer descriptors.
+3. Add size-specific renderer configuration.
+4. Add wide and inner-layer notation types.
+5. Enable 4×4 selection only behind tested capability flags.
+6. Add 4×4 completeness and color-count validation.
+
+### Testing and validation
+
+- 3×3 behavior remains unchanged.
+- 4×4 facelet counts and moves are correct.
+- Wide and inner-layer moves serialize and deserialize consistently.
+- Four-facelet center regions are represented correctly.
+
+### Acceptance criteria
+
+- A 4×4 state can be entered and represented correctly, even if solving remains disabled until M10.
+
+---
+
+## M10 — 4×4 solving, parity, and playback
+
+### Objective and expected outcome
+
+Support a correct 4×4 reduction solver, including legal parity cases, with the existing playback system.
+
+### Planned files and modules
+
+- `src/solver/fourByFour/`.
+- Center-solving logic.
+- Edge-pairing logic.
+- Reduced-3×3 conversion.
+- Parity algorithms.
+- 4×4 fixtures and tests.
+
+### Dependencies
+
+M9 and the stable 3×3 solver pipeline from M6–M8.
+
+### Implementation order
+
+1. Define 4×4 piece and center representations.
+2. Implement center construction.
+3. Implement edge pairing.
+4. Reduce the state to the 3×3 solver contract.
+5. Detect and resolve parity cases.
+6. Verify complete solutions by replay.
+7. Extend notation, highlighting, and animation for multiple layers.
+
+### Testing and validation
+
+- Known 4×4 scrambles solve to a solved state.
+- Center and edge-pairing intermediate states are verified.
+- Both parity cases have fixtures.
+- Long solutions remain playable one move at a time.
+
+### Acceptance criteria
+
+- 4×4 solving is enabled only after legal-state validation and complete replay verification pass.
+
+---
+
+## M11 — 5×5 and generalized reduction foundations
+
+### Objective and expected outcome
+
+Extend reduction concepts to odd cubes and establish reusable center, edge, parity, and notation abstractions.
+
+### Dependencies
+
+M10.
+
+### Implementation order
+
+1. Generalize center representation for odd cubes.
+2. Generalize edge grouping and pairing.
+3. Reuse the reduced 3×3 solver.
+4. Add 5×5 parity and validation fixtures.
+5. Verify rendering and playback for multi-layer moves.
+
+### Testing and validation
+
+- 5×5 known states solve correctly.
+- Center and edge reduction invariants are tested.
+- Existing 3×3 and 4×4 suites remain green.
+
+### Acceptance criteria
+
+- 5×5 support is implemented without size-specific duplication of the shared UI workflow.
+
+---
+
+## M12 — 6×6 through 20×20 expansion and performance
+
+### Objective and expected outcome
+
+Add the remaining supported cube sizes only after measuring solver and renderer behavior at each size.
+
+### Dependencies
+
+M11.
+
+### Implementation order
+
+1. Add generalized even/odd center and edge strategies.
+2. Add size capability flags one size at a time.
+3. Benchmark memory, frame rate, and solve time.
+4. Introduce instanced or surface-optimized rendering where measurements require it.
+5. Add long-solution navigation and progress indicators.
+6. Validate each size with generated and fixture states.
+
+### Testing and validation
+
+- Each size has valid-state, invalid-state, move, and solved-state fixtures.
+- Rendering remains usable at the target size.
+- Worker solving does not freeze the main thread.
+- Every returned solution passes replay verification.
+
+### Acceptance criteria
+
+- A size is enabled only when its validation, solving, rendering, and playback criteria are met.
+- 20×20 support is not advertised merely because the UI accepts the number; it must pass the complete correctness and performance checks.
+
+## Milestone completion and Git workflow
+
+At the end of every milestone:
+
+1. Run the milestone's tests and the full regression suite.
+2. Review the diff and remove generated files.
+3. Update this roadmap's status and the README if user-facing behavior changed.
+4. Commit only the completed milestone.
+5. Push the feature branch and open a pull request when collaborating.
+6. Merge into `main` only after checks pass.
+
+The commit message should describe the milestone, for example:
+
+```text
+Implement 3x3 cube state and move engine
+```
+
