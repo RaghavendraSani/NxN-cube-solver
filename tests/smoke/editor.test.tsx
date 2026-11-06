@@ -42,13 +42,13 @@ describe('editor', () => {
     vi.stubGlobal('Worker', worker);
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Solve' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Invalid state. Try again.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Some squares have not been assigned.');
     expect(worker).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Square: unassigned' }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('locks editing while solving and shows the returned solution', () => {
+  it('locks editing while solving and shows the returned solution', async () => {
     vi.spyOn(validator, 'validateCube').mockReturnValue({ valid: true });
     let instance: FakeWorker;
     class FakeWorker {
@@ -70,14 +70,17 @@ describe('editor', () => {
     expect(screen.getByText('Calculating solution…')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Solve' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /red/i })).toBeDisabled();
-    act(() => instance.onmessage?.({ data: { ok: true, moves: [{ face: 'R', turns: 1 }] } }));
+    await act(async () =>
+      instance.onmessage?.({ data: { ok: true, moves: [{ face: 'R', turns: 1 }] } }),
+    );
     expect(screen.getByRole('region', { name: 'Verified solution' })).toHaveTextContent('R');
+    expect(screen.getByText(/Hold your physical cube/)).toBeInTheDocument();
     expect(instance.terminate).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'New Cube' }));
     expect(screen.getByRole('button', { name: 'Solve' })).toBeEnabled();
   });
 
-  it('reports a worker failure and allows the user to try again', () => {
+  it('reports a worker failure and allows the user to try again', async () => {
     vi.spyOn(validator, 'validateCube').mockReturnValue({ valid: true });
     let fail: (() => void) | null = null;
     class FailingWorker {
@@ -92,7 +95,7 @@ describe('editor', () => {
     vi.stubGlobal('Worker', FailingWorker);
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Solve' }));
-    act(() => {
+    await act(async () => {
       if (fail) fail();
     });
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to calculate a verified solution');

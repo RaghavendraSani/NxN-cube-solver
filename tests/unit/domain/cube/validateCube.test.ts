@@ -46,6 +46,12 @@ describe('3×3 validation', () => {
     });
   });
 
+  it('rejects a reflected center arrangement with the same opposite colors', () => {
+    const cube = createSolvedCube();
+    const reflected = { ...cube, R: cube.L, L: cube.R };
+    expect(validateCube(reflected)).toEqual({ valid: false, reason: 'centers' });
+  });
+
   it('rejects a single flipped edge', () => {
     expect(validateCube(swap(createSolvedCube(), ['U', 5], ['R', 1]))).toEqual({
       valid: false,

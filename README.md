@@ -20,7 +20,7 @@ The initial implementation target is a complete 3×3×3 experience. Support for 
 - Complete validation before solving.
 - Guaranteed-correct solution prioritized over solution length.
 - Web Worker-based solving so the interface remains responsive.
-- Interactive playback one move at a time with adjustable animation speed.
+- Interactive playback one move at a time with adjustable animation speed is planned for M7.
 - No persistence of incomplete entries.
 
 ## Documentation
@@ -52,9 +52,9 @@ The exact dependency versions will be pinned when the implementation bootstrap m
 - A modern browser with WebGL 2 support.
 - An editor with TypeScript support.
 
-### Planned local commands
+### Local commands
 
-Once the implementation bootstrap milestone creates `package.json`, the expected workflow will be:
+Install dependencies and start the development server:
 
 ```powershell
 npm install
@@ -70,9 +70,13 @@ npm test
 npm run build
 ```
 
-The exact script names will be finalized during the tooling milestone.
+To run the Chromium browser test, install its browser once and run:
 
-The current documentation-only repository has no runnable application yet.
+```powershell
+npx playwright install chromium
+npm run test:e2e
+```
+
 
 ## Contribution workflow
 
@@ -80,7 +84,7 @@ The current documentation-only repository has no runnable application yet.
 
 ## Current limitations
 
-- No application code is currently implemented.
+- Interactive move playback is not implemented yet.
 - Only the 3×3 solver is planned for the first complete release.
 - Camera scanning, persistence, accounts, cloud synchronization, and accessibility enhancements are deferred.
 

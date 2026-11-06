@@ -3,6 +3,7 @@ import { FACES } from '../cube/faces';
 import type { Color } from '../cube/colors';
 import { createSolvedCube } from '../cube/state';
 import type { CubeState } from '../cube/types';
+import { centerMapping, normalizeColors } from '../cube/centerMapping';
 
 type Reason =
   | 'incomplete'
@@ -119,7 +120,8 @@ function permutationParity(permutation: readonly number[]): number {
   return inversions % 2;
 }
 
-export function validateCube(state: CubeState): ValidationResult {
+export function validateCube(input: CubeState): ValidationResult {
+  let state = input;
   if (
     FACES.some(
       (face) => state[face].length !== 9 || state[face].some((color) => color === 'unassigned'),
@@ -133,8 +135,9 @@ export function validateCube(state: CubeState): ValidationResult {
   const solved = createSolvedCube();
   if (FACES.some((face) => counts.get(solved[face][4]) !== 9))
     return { valid: false, reason: 'color-count' };
-  if (FACES.some((face) => state[face][4] !== solved[face][4]))
-    return { valid: false, reason: 'centers' };
+  const mapping = centerMapping(state);
+  if (!mapping) return { valid: false, reason: 'centers' };
+  state = normalizeColors(state, mapping);
 
   const cornerPermutation: number[] = [];
   let cornerOrientation = 0;

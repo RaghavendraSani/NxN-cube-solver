@@ -9,6 +9,16 @@ import { paintFacelet } from '../../../src/domain/cube/inputState';
 import { MeshBasicMaterial } from 'three';
 
 describe('cube facelet picking', () => {
+  it('marks unassigned facelets and hides the mark for assigned white', () => {
+    const scene = createCubeScene();
+    const state = createUnassignedCube();
+    scene.setState(state);
+    expect(scene.facelets[0].children[0].visible).toBe(true);
+    scene.setState(paintFacelet(state, { face: 'U', row: 0, column: 0 }, 'white'));
+    expect(scene.facelets[0].children[0].visible).toBe(false);
+    expect(scene.facelets[1].children[0].visible).toBe(true);
+    scene.dispose();
+  });
   it('maps the center of every visible facelet to its canonical address', () => {
     const scene = createCubeScene();
     const camera = new PerspectiveCamera(35, 1, 0.1, 100);

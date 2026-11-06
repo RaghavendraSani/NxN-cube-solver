@@ -319,6 +319,8 @@ M3.
 
 ## M5 — 3×3 validation
 
+The original fixed-orientation and generic-message behavior below was superseded by the approved orientation and feedback fix recorded under M6.
+
 **Status:** Complete and approved.
 
 ### Objective and expected outcome
@@ -434,6 +436,8 @@ M5.
 - The solved-state, generated-scramble, independent facelet fixture, invalid-input, corrupted-result, and UI worker-mock tests pass.
 - Type-check, lint, formatting, production build, and 31 tests pass. The existing Vite bundle-size warning remains.
 - A real-browser end-to-end worker test and responsiveness check remain to be verified. Animated playback remains M7.
+- Approved follow-up fix implemented: support all 24 whole-cube orientations of the fixed color scheme, distinguish unassigned facelets with dots, and show specific validation guidance. All 34 tests, type-check, lint, formatting, and build pass; browser verification remains pending.
+- Review follow-up: added orientation guidance using center colors, enabled view rotation after solving, added a two-minute worker failure watchdog, and added a Chromium end-to-end test. Browser test passed on two reruns after an initial timeout; additional cross-browser and physical-cube verification remains pending.
 
 ---
 

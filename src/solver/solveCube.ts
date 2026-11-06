@@ -3,15 +3,16 @@ import { applyMove } from '../domain/cube/applyMove';
 import { FACES } from '../domain/cube/faces';
 import { isSolved } from '../domain/cube/isSolved';
 import type { Move } from '../domain/cube/moves';
-import { createSolvedCube } from '../domain/cube/state';
+import { centerMapping } from '../domain/cube/centerMapping';
 import type { CubeState } from '../domain/cube/types';
 import { validateCube } from '../domain/validation/validateCube';
 
 export function toFaceletString(state: CubeState): string {
-  const solved = createSolvedCube();
+  const mapping = centerMapping(state);
+  if (!mapping) throw new Error('Invalid centers.');
   return FACES.flatMap((face) =>
     state[face].map((color) => {
-      const identity = FACES.find((candidate) => solved[candidate][4] === color);
+      const identity = mapping.get(color);
       if (!identity) throw new Error('Unassigned or unknown color.');
       return identity;
     }),

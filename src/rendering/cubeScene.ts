@@ -1,5 +1,6 @@
 import {
   BoxGeometry,
+  CircleGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
@@ -32,6 +33,8 @@ export function createCubeScene() {
     Object.entries(COLOR_VALUES).map(([key, color]) => [key, new MeshBasicMaterial({ color })]),
   ) as Record<Color, MeshBasicMaterial>;
   const facelets: Mesh[] = [];
+  const markerGeometry = new CircleGeometry(0.06, 16);
+  const markerMaterial = new MeshBasicMaterial({ color: 0x777777 });
   for (const face of FACES) {
     for (let row = 0; row < 3; row++) {
       for (let column = 0; column < 3; column++) {
@@ -42,6 +45,10 @@ export function createCubeScene() {
         sticker.position.set(...position).addScaledVector(outward, 0.51);
         sticker.quaternion.copy(new Quaternion().setFromUnitVectors(new Vector3(0, 0, 1), outward));
         sticker.userData.address = address;
+        const marker = new Mesh(markerGeometry, markerMaterial);
+        marker.position.z = 0.002;
+        marker.raycast = () => {};
+        sticker.add(marker);
         group.add(sticker);
         facelets.push(sticker);
       }
@@ -54,12 +61,15 @@ export function createCubeScene() {
       for (const sticker of facelets) {
         const { face, row, column } = sticker.userData.address as FaceletAddress;
         sticker.material = materials[state[face][row * 3 + column]];
+        sticker.children[0].visible = state[face][row * 3 + column] === 'unassigned';
       }
     },
     dispose() {
       bodyGeometry.dispose();
       bodyMaterial.dispose();
       stickerGeometry.dispose();
+      markerGeometry.dispose();
+      markerMaterial.dispose();
       Object.values(materials).forEach((material) => material.dispose());
     },
   };

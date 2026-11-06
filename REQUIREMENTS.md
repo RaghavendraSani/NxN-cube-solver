@@ -46,7 +46,7 @@ CubeSolver helps a user reproduce the visible state of a physical Rubik's Cube, 
 6. Use animated rotation controls to expose the next three faces.
 7. Paint all six faces.
 8. Submit the state for validation.
-9. If invalid, display `Invalid state. Try again.` and remain in editing mode.
+9. If invalid, display concise guidance for the detected problem and remain in editing mode.
 10. If valid, calculate a solution without exposing a user cancellation control.
 11. Display the complete move sequence.
 12. Advance one move at a time.
@@ -75,7 +75,7 @@ Any previously painted square shall be recolorable by selecting a different pale
 
 ### FR-005: Unassigned-state tracking
 
-The internal model shall distinguish an unassigned facelet from an intentionally white facelet, even though the initial display is white.
+The internal model shall distinguish an unassigned facelet from an intentionally white facelet. Unassigned facelets shall appear white with a visible marker.
 
 ### FR-006: Three-face view
 
@@ -95,7 +95,7 @@ Before solving, the application shall validate completeness, color counts, cente
 
 ### FR-010: Invalid-state feedback
 
-An invalid state shall prevent solving and display the exact generic message `Invalid state. Try again.`
+An invalid state shall prevent solving and display concise guidance for the detected issue.
 
 ### FR-011: Solution correctness
 
@@ -173,7 +173,7 @@ The UI shall visibly distinguish the selected color, current move, affected laye
 
 ## 6. Constraints and assumptions
 
-- The initial product uses a fixed supported color scheme.
+- The initial product supports any whole-cube orientation of its fixed color scheme; arbitrary color schemes remain out of scope.
 - Users manually enter the physical cube state.
 - The application cannot verify physical moves without a camera.
 - The 3D display orientation and puzzle state are separate.
@@ -187,7 +187,7 @@ The 3×3 MVP is acceptable when a user can:
 1. Start a new 3×3 session.
 2. Paint and recolor every facelet through the 3D view.
 3. Rotate the model through all six faces with animation.
-4. Receive the generic invalid-state message for an invalid configuration.
+4. Receive relevant invalid-state guidance for an invalid configuration.
 5. Submit a valid scrambled state.
 6. Receive a verified solution.
 7. Advance through every move individually.

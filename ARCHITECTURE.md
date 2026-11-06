@@ -95,7 +95,7 @@ Converts a rendered facelet hit into a canonical `(face, row, column)` coordinat
 
 ### Validator
 
-For 3×3, validates completeness, color counts, center scheme, corner identity/orientation, edge identity/orientation, and permutation parity. The UI displays the required generic message, `Invalid state. Try again.`; richer diagnostics remain available internally for tests and future UX improvements.
+For 3×3, validates completeness, color counts, center scheme, corner identity/orientation, edge identity/orientation, and permutation parity. The UI shows concise guidance based on the validation result.
 
 ### Move and notation module
 
@@ -300,7 +300,7 @@ The logical model must support the complete cube even if the renderer uses an op
 
 User-facing errors remain intentionally simple:
 
-- `Invalid state. Try again.`
+- A concise message describing the detected input problem.
 - A separate rendering-unavailable message if WebGL cannot initialize.
 - A separate solver failure message if the local solver or worker fails.
 
@@ -382,6 +382,7 @@ The UI, session lifecycle, palette, playback controls, and renderer contracts re
 - **ADR-008:** Cube sizes are implemented incrementally beginning with 3×3.
 - **ADR-009:** Solver dependencies are isolated behind size-specific interfaces.
 - **ADR-010:** Use `@turnwise/cube-solver` 1.0.1 (Apache-2.0, no runtime dependencies) for the initial 3×3 adapter. Its output is independently replayed before display. The package is relatively new and should be reviewed when updating dependencies.
+- **ADR-011:** Accept any proper whole-cube orientation of the supported fixed color scheme. Map colors by their centers for validation and solver input while retaining the entered face coordinates for move output. Unassigned white-looking facelets have a dot, and validation presents specific guidance.
 
 ## 18. Approval boundary
 
