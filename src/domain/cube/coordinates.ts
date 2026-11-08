@@ -5,7 +5,7 @@ export type FaceletAddress = Readonly<{ face: Face; row: number; column: number 
 export type FaceletCoordinates = Readonly<{ position: Vector; normal: Vector }>;
 
 // x points right, y up, z front. Each basis gives outward normal, screen-right, screen-down.
-const BASIS: Record<Face, readonly [Vector, Vector, Vector]> = {
+export const FACE_BASIS: Record<Face, readonly [Vector, Vector, Vector]> = {
   U: [
     [0, 1, 0],
     [1, 0, 0],
@@ -53,7 +53,7 @@ export function faceletToCoordinates({ face, row, column }: FaceletAddress): Fac
   ) {
     throw new RangeError('Facelet row and column must be integers from 0 to 2.');
   }
-  const [normal, right, down] = BASIS[face];
+  const [normal, right, down] = FACE_BASIS[face];
   return {
     normal,
     position: [0, 1, 2].map(
@@ -63,15 +63,15 @@ export function faceletToCoordinates({ face, row, column }: FaceletAddress): Fac
 }
 
 export function coordinatesToFacelet({ position, normal }: FaceletCoordinates): FaceletAddress {
-  const face = (Object.keys(BASIS) as Face[]).find(
-    (candidate) => dot(BASIS[candidate][0], normal) === 1,
+  const face = (Object.keys(FACE_BASIS) as Face[]).find(
+    (candidate) => dot(FACE_BASIS[candidate][0], normal) === 1,
   );
   if (!face) throw new RangeError('Invalid facelet normal.');
-  const [, right, down] = BASIS[face];
+  const [, right, down] = FACE_BASIS[face];
   const row = dot(position, down) + 1;
   const column = dot(position, right) + 1;
   if (
-    dot(position, BASIS[face][0]) !== 1 ||
+    dot(position, FACE_BASIS[face][0]) !== 1 ||
     !Number.isInteger(row) ||
     row < 0 ||
     row > 2 ||

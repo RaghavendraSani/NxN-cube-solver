@@ -4,9 +4,11 @@ CubeSolver is an offline browser application for manually recreating and solving
 
 ## Project status
 
-The architecture and implementation roadmap are approved. The 3×3 editor, state validation, locally calculated replay-verified solution, and interactive move playback are implemented. Milestone 7 is approved.
+The 3×3 and 4×4 editors, locally calculated replay-verified solutions, and interactive move playback are implemented. The 4×4 release is awaiting final GitHub checks and owner verification.
 
-The initial implementation target is a complete 3×3×3 experience. Support for 4×4×4 through 20×20×20 will be added incrementally.
+The current implementation supports 3×3×3 and 4×4×4. Support for 5×5×5 through 20×20×20 is planned incrementally.
+
+The 4×4 validator checks color counts, corner identity and twist, and wing identities. Its implementation has not been formally verified, and the solver may time out or fail on a valid state. Every solution is independently replayed before display. Switching cube size clears the current entry.
 
 ## Core behavior
 
@@ -17,7 +19,7 @@ The initial implementation target is a complete 3×3×3 experience. Support for 
 - Single-square color painting and recoloring.
 - Fixed camera with animated cube-model rotations.
 - Exactly three visible faces at a time.
-- Complete validation before solving.
+- State checks before solving, followed by independent solution verification.
 - Guaranteed-correct solution prioritized over solution length.
 - Web Worker-based solving so the interface remains responsive.
 - Interactive playback advances one move at a time with adjustable animation speed.
@@ -97,6 +99,7 @@ The workflow in `.github/workflows/ci.yml` runs on pushes, pull requests, or man
 ## Current limitations
 
 - Playback has not yet been verified against a physical cube.
-- Only the 3×3 solver is planned for the first complete release.
+- 4×4 playback has not yet been verified against a physical cube; solver success on every legal state is not established.
+- Cube sizes above 4×4 are not yet supported.
 - Camera scanning, persistence, accounts, cloud synchronization, and accessibility enhancements are deferred.
 

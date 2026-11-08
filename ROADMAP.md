@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M6 complete and approved
+**Status:** M8 approved with recorded exceptions; M9 and M10 prepared for release verification
 
-**Current phase:** Awaiting Milestone 7
+**Current phase:** 4×4 validation, solving, and testing
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -28,10 +28,10 @@ Recommended status values:
 | M4 | Palette painting and animated view navigation | Complete | M3 |
 | M5 | 3×3 validation | Complete | M4 |
 | M6 | Solver worker and verified solution generation | Complete | M5 |
-| M7 | Interactive move playback | Not started | M6 |
-| M8 | End-to-end hardening and MVP release | Not started | M7 |
-| M9 | NxN domain and notation extension for 4×4 | Not started | M8 |
-| M10 | 4×4 solving, parity, and playback | Not started | M9 |
+| M7 | Interactive move playback | Complete | M6 |
+| M8 | End-to-end hardening and MVP release | Approved with exceptions | M7 |
+| M9 | NxN domain and notation extension for 4×4 | Awaiting release verification | M8 |
+| M10 | 4×4 solving, parity, and playback | Awaiting release verification | M9 |
 | M11 | 5×5 and generalized reduction foundations | Not started | M10 |
 | M12 | Larger-cube performance and 6×6–20×20 expansion | Not started | M11 |
 
@@ -501,7 +501,9 @@ M6.
 
 ## M8 — End-to-end hardening and 3×3 MVP release
 
-**Status:** In progress; local verification passed, GitHub Actions and clean-clone verification pending.
+**Status:** Approved by owner with outstanding items; M9 may proceed.
+
+**Owner-approved exception:** Physical-cube testing remains pending. The owner reports that a friend successfully cloned the project and solved a digital 3×3 using the app. Runtime third-party notices were subsequently added to the build. The cause of the intermittent Chromium delay remains unknown; its test timeout was aligned with the worker safeguard. These outstanding items are not considered verified or resolved by M8 approval.
 
 ### Objective and expected outcome
 
@@ -555,10 +557,39 @@ M7.
 - Local baseline: one solver-library fixture took 396 ms on its first run and 105–184 ms across nine later runs in the same Node process. A headless Chromium view-rotation sample recorded median 16.7 ms, 95th percentile 16.8 ms, and maximum 50 ms between animation frames (136 frames). These limited measurements are not guarantees for other scrambles or machines.
 - Direct dependencies declare MIT or Apache-2.0 licenses; npm audit reported zero findings at review time. A full transitive license and maintenance review remains pending.
 - Aligned the end-to-end test's solution wait with the application's 120-second worker watchdog and increased the overall test timeout to accommodate it. The Chromium full-flow test, type-check, lint, and formatting passed. The original cause of the intermittent delay remains unknown.
+- The owner confirmed GitHub Actions passed after the timeout adjustment. Clean-clone feedback was pending at that point; the later setup result is recorded below.
+- Production asset inspection found no license or copyright mentions in the generated JS/CSS; review bundled dependencies and add appropriate third-party notices before distributing the build. Package metadata alone is not a complete license-obligations review.
+- The owner initially reported that their friend successfully cloned and ran the project on another computer, confirming setup and startup.
+- The owner subsequently clarified that the friend completed a digital 3×3 solve. No physical-cube or 4×4 test was reported.
+- Added third-party notices for bundled runtime libraries and vendored 4×4 solver source; the production build serves the notice file. Existing physical-cube verification and intermittent-delay limitations remain.
 
 ---
 
 ## M9 — NxN domain and notation extension for 4×4
+
+**Status:** Implementation prepared for release; GitHub checks and owner milestone acceptance remain pending.
+
+**Testing scope requested by owner:** Retain the existing correctness, parity, invalid-state, regression, and browser checks; do not add large stress-test campaigns solely for extra confidence. Physical 4×4 testing and additional hardware performance sampling are deferred when unavailable, and must not be reported as verified. The validation/reachability review, verified-solution replay, and checks required by the project instructions remain necessary before enabling 4×4 solving by default.
+
+### Actual progress
+
+- Added independent size-aware facelet coordinates and cube creation, plus outer, inner, and wide layer turns. Coordinate round trips, inverse/four-turn identities, a known inner-slice case, wide-turn composition, and compatibility with existing 3×3 turns pass.
+- At the domain-foundation stage, 43 unit/component tests, type-checking, linting, formatting, and the production build passed.
+- Added an explicitly labelled 4×4 entry preview with 96 facelets, painting, recoloring, 16-per-color counts, and view rotation. Solving remains disabled and changing size clears the current entry. At this stage 45 unit/component tests and 12 Chromium/Firefox/WebKit browser tests passed, as did type-check, lint, formatting, and build.
+- Added 4×4 outer (`R`), inner (`2R`), and wide (`Rw`) move notation and layer-animation foundations. Unique-sticker geometry tests verify every face and turn against the NxN domain model; 48 unit/component tests and 12 browser regression tests pass. 4×4 playback is not yet connected to the interface or browser-tested as a complete flow.
+- Added preliminary 4×4 completeness and color-count checks, explicitly labelled as insufficient to prove solvability. 51 unit/component tests, the three-browser 4×4 preview test, type-checking, lint, formatting, and build pass. Piece identity, orientation, reachability, full 4×4 validation and verified solving remain incomplete.
+- Added preliminary corner and wing color-combination checks and regression-tested 1,200 legal outer, inner, and wide turns. The MIT cubesmith scrambler describes an internal 4×4 reduction solver, but its documented API exposes scramble generation rather than arbitrary input solving, and its large-sample completeness assessment remains open. No solver has been adopted.
+- Added corner handedness and twist checks, tested against mirrored and twisted corner fixtures, 1,200 legal turns, and all 24 whole-cube orientations. 55 unit/component tests, build, type-check, lint, and formatting pass. Wing orientation/identity and full reachability validation remain incomplete; valid-looking input is not labelled solvable.
+- Added wing handedness/identity checks with a flipped-wing fixture and legal-move regressions. 56 unit/component tests, build, type-check, lint, and formatting pass. Full reachability is not yet established and preview results remain preliminary. Inspection of `@cubesmith/scrambler` 0.15.0 found an internal `solve444` on a piece-state representation, but it is not exported by the published package; conversion, dependency integration, completeness, and independent replay remain unverified.
+- Isolated feasibility experiment converts five deterministic 8-move scrambles to the candidate's private piece-state interface and independently replays its solutions to solved. It dynamically exposes the private function from the MIT-licensed package in memory; it is not production integration. The experiment and setup instructions are in `experiments/`. Arbitrary manually entered states, parity fixtures, completeness, browser execution, runtime bounds, licensing notices for any future incorporation, and broad regression testing remain unverified.
+- Moved facelet-to-piece conversion into a typed adapter module with layout and invalid-input checks. The five-case experiment now exercises that module and independently replays each solution; the candidate's MIT license is recorded with the experiment. 58 unit/component tests, type-check, lint, formatting, and build pass. The candidate function remains private to its published bundle and is not integrated into the app.
+- Owner approved a pinned MIT-licensed source copy for the 4×4 adapter (ADR-012). The adapter solves and independently replays a legal mixed-layer scramble and reduced flip/permutation parity fixtures; truncated output is rejected. 63 unit/component tests, type-check, lint, formatting, and build pass. The adapter remains internal: worker integration, full validation, browser playback and broad state coverage remain pending.
+- Added a size-aware worker request and a 4×4 worker client with structured success/failure and a separate replay check. Browser tests sent a 4×4 scramble to the actual worker and independently replayed it in Chromium, Firefox, and WebKit against both development and production builds. 66 unit/component tests, type-check, lint, formatting, and build pass. The 4×4 Solve button remains disabled pending full validation and playback integration.
+- Connected test-only 4×4 solve and playback, with wide-layer highlighting and initial top/front color-pattern references. `VITE_ENABLE_4X4_TEST=1` enables the path for testing; normal builds keep 4×4 solving disabled until the release criteria are satisfied. The test-enabled production flow passed in Chromium, Firefox, and WebKit. Added 200 piece-state conversion fixtures and five deterministic 25-move replay tests; 69 unit/component tests, type-check, lint, formatting, and build passed. Full reachability review, broader solver reliability, real-cube guidance, and release notices remain pending.
+- Expanded invalid-state coverage to single corner twists at all eight positions and single wing flips at all 24 positions. A developer-only Node benchmark replay-verified 10 deterministic 40-move scrambles: the first took 12,170 ms and the nine warm cases took 142–673 ms on this machine. This sample excludes browser/worker startup, has no 120-second watchdog, and is not a worst-case guarantee; physical-cube testing and further reachability/reliability work remain pending.
+- Documented the 4×4 reachability theorem, the unmarked-center parity inference, the implementation mapping, and its limits in `docs/4x4-reachability-review.md`. This review does not claim formal verification of the code or universal solver success.
+- Added a 4×4 worker-timeout regression test. The full suite of 71 unit/component tests, type-check, lint, and formatting pass. The 4×4 release gate remains in place pending review of the code-to-theorem mapping and third-party release notices.
+- At the owner's direction, enabled 4×4 solving by default and added bundled runtime third-party notices. The unflagged production build, 71 unit/component tests, lint, formatting, type-check, and all 18 Chromium/Firefox/WebKit browser tests pass. GitHub Actions has not yet run on this change. Solver success for every legal state, physical 4×4 verification, and formal verification of the validator remain unestablished.
 
 ### Objective and expected outcome
 

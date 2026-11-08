@@ -3,6 +3,7 @@ import type { FaceletAddress } from './coordinates';
 import { faceletToCoordinates } from './coordinates';
 import { FACES } from './faces';
 import type { CubeState } from './types';
+import { toNxNCoordinates } from '../nxn/cube';
 
 export type PaletteColor = Exclude<Color, 'unassigned'>;
 export const PALETTE_COLORS: readonly PaletteColor[] = [
@@ -18,10 +19,12 @@ export function paintFacelet(
   state: CubeState,
   address: FaceletAddress,
   color: PaletteColor,
+  size = 3,
 ): CubeState {
-  faceletToCoordinates(address); // Validate the address before copying the face.
+  if (size === 3) faceletToCoordinates(address);
+  else toNxNCoordinates(address, size);
   const face = [...state[address.face]];
-  face[address.row * 3 + address.column] = color;
+  face[address.row * size + address.column] = color;
   return { ...state, [address.face]: face };
 }
 

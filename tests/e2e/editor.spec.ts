@@ -4,6 +4,7 @@ import { applyMove } from '../../src/domain/cube/applyMove';
 import { faceletToCoordinates } from '../../src/domain/cube/coordinates';
 import { FACES } from '../../src/domain/cube/faces';
 import { createSolvedCube } from '../../src/domain/cube/state';
+import { applyNxNMove, createNxNCube, type LayerMove } from '../../src/domain/nxn/cube';
 
 test('enters a scrambled cube and receives a verified worker solution', async ({ page }) => {
   const externalRequests: string[] = [];
@@ -75,7 +76,9 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   }
   expect(painted.size).toBe(54);
   await expect(page.getByText('0 squares remaining to assign.')).toBeVisible();
+  const workerStarted = page.waitForEvent('worker');
   await page.getByRole('button', { name: 'Solve' }).click();
+  const solverWorkerUrl = (await workerStarted).url();
   await expect(
     page.getByRole('alert').or(page.getByRole('region', { name: 'Verified solution' })),
   ).toBeVisible({ timeout: 130_000 });
@@ -85,6 +88,37 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   });
   await expect(page.getByText(/Hold your physical cube with white on top/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Rotate right' })).toBeEnabled();
+  const four = applyNxNMove(createNxNCube(4, true), 4, { face: 'R', layer: 0, width: 2, turns: 1 });
+  const response = await page.evaluate(
+    async ({ workerUrl, state }) => {
+      const worker = new Worker(workerUrl, { type: 'module' });
+      try {
+        return await new Promise<{ ok: true; moves: LayerMove[] } | { ok: false; error: string }>(
+          (resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('4x4 worker test timed out')), 120000);
+            worker.onmessage = (event) => {
+              clearTimeout(timer);
+              resolve(event.data);
+            };
+            worker.onerror = () => {
+              clearTimeout(timer);
+              reject(new Error('4x4 worker failed'));
+            };
+            worker.postMessage({ size: 4, state });
+          },
+        );
+      } finally {
+        worker.terminate();
+      }
+    },
+    { workerUrl: solverWorkerUrl, state: four },
+  );
+  expect(response.ok).toBe(true);
+  if (!response.ok) throw new Error(response.error);
+  const replayed = response.moves.reduce((state, move) => applyNxNMove(state, 4, move), four);
+  expect(FACES.every((face) => replayed[face].every((color) => color === replayed[face][0]))).toBe(
+    true,
+  );
   await page.getByLabel('Animation speed').selectOption('1200');
   const totalMoves = (await page.getByLabel('Move sequence').textContent())!
     .trim()

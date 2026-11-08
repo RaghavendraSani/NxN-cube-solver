@@ -3,12 +3,35 @@ import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera, Quaternion, Raycaster, Vector2, Vector3 } from 'three';
 import { createCubeScene } from '../../../src/rendering/cubeScene';
 import { faceletToCoordinates } from '../../../src/domain/cube/coordinates';
+import { toNxNCoordinates } from '../../../src/domain/nxn/cube';
 import { pickFacelet } from '../../../src/rendering/pickFacelet';
 import { createUnassignedCube } from '../../../src/domain/cube/state';
 import { paintFacelet } from '../../../src/domain/cube/inputState';
 import { MeshBasicMaterial } from 'three';
 
 describe('cube facelet picking', () => {
+  it('maps all visible 4x4 facelet centers', () => {
+    const scene = createCubeScene(4);
+    const camera = new PerspectiveCamera(35, 1, 0.1, 100);
+    camera.position.set(6, 6, 6);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    scene.group.updateMatrixWorld(true);
+    const raycaster = new Raycaster();
+    for (const face of ['U', 'R', 'F'] as const)
+      for (let row = 0; row < 4; row++)
+        for (let column = 0; column < 4; column++) {
+          const address = { face, row, column };
+          const { position, normal } = toNxNCoordinates(address, 4);
+          const point = new Vector3(...position)
+            .multiplyScalar(3 / 8)
+            .addScaledVector(new Vector3(...normal), (0.51 * 3) / 4)
+            .project(camera);
+          raycaster.setFromCamera(new Vector2(point.x, point.y), camera);
+          expect(pickFacelet(raycaster, scene.facelets)).toEqual(address);
+        }
+    scene.dispose();
+  });
   it('marks unassigned facelets and hides the mark for assigned white', () => {
     const scene = createCubeScene();
     const state = createUnassignedCube();

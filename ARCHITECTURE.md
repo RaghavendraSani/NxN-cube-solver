@@ -383,6 +383,7 @@ The UI, session lifecycle, palette, playback controls, and renderer contracts re
 - **ADR-009:** Solver dependencies are isolated behind size-specific interfaces.
 - **ADR-010:** Use `@turnwise/cube-solver` 1.0.1 (Apache-2.0, no runtime dependencies) for the initial 3×3 adapter. Its output is independently replayed before display. The package is relatively new and should be reviewed when updating dependencies.
 - **ADR-011:** Accept any proper whole-cube orientation of the supported fixed color scheme. Map colors by their centers for validation and solver input while retaining the entered face coordinates for move output. Unassigned white-looking facelets have a dot, and validation presents specific guidance.
+- **ADR-012:** For the 4×4 adapter, maintain a pinned source copy of the relevant MIT-licensed `@cubesmith/scrambler` 0.15.0 solver behind a size-specific interface because its solver is not exposed by the public package. Preserve its license, track provenance, and independently replay every solution. The worker and UI support 4×4 solving; validation has not been formally verified and universal solver success is not established.
 
 ## 18. Approval boundary
 

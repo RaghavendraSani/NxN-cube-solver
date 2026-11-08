@@ -13,12 +13,13 @@ import type { Move } from '../domain/cube/moves';
 import type { Face } from '../domain/cube/faces';
 import { createCubeScene } from './cubeScene';
 import { pickFacelet } from './pickFacelet';
+import type { LayerMove } from '../domain/nxn/cube';
 
 export class CubeRenderer {
   private readonly renderer = new WebGLRenderer({ antialias: true });
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(35, 1, 0.1, 100);
-  private readonly cube = createCubeScene();
+  private readonly cube: ReturnType<typeof createCubeScene>;
   private readonly raycaster = new Raycaster();
   private readonly observer: ResizeObserver;
   private frame: number | null = null;
@@ -26,7 +27,9 @@ export class CubeRenderer {
   constructor(
     private readonly container: HTMLElement,
     private readonly onSelect: (address: FaceletAddress) => void,
+    size = 3,
   ) {
+    this.cube = createCubeScene(size);
     this.camera.position.set(6, 6, 6);
     this.camera.lookAt(0, 0, 0);
     this.scene.add(this.cube.group);
@@ -66,8 +69,8 @@ export class CubeRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  setHighlight(face: Face | null) {
-    this.cube.setHighlight(face);
+  setHighlight(face: Face | null, layer = 0, width = 1) {
+    this.cube.setHighlight(face, layer, width);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -94,7 +97,12 @@ export class CubeRenderer {
     return true;
   }
 
-  animateMove(move: Move, duration: number, nextState: CubeState, onComplete: () => void): boolean {
+  animateMove(
+    move: Move | LayerMove,
+    duration: number,
+    nextState: CubeState,
+    onComplete: () => void,
+  ): boolean {
     if (this.frame !== null) return false;
     const layer = this.cube.beginLayerTurn(move);
     const started = performance.now();

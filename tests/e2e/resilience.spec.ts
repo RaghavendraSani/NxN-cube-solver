@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
 import { PerspectiveCamera, Vector3 } from 'three';
 
+test('serves third-party license notices with the application', async ({ request }) => {
+  const response = await request.get('/THIRD_PARTY_NOTICES.txt');
+  expect(response.ok()).toBe(true);
+  const text = await response.text();
+  expect(text).toContain('React');
+  expect(text).toContain('three.js');
+  expect(text).toContain('@turnwise/cube-solver');
+  expect(text).toContain('@cubesmith/scrambler');
+});
+
 test('resizes, does not persist an incomplete entry, and continues without network', async ({
   page,
   context,

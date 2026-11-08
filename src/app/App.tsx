@@ -9,21 +9,26 @@ import {
 import type { FaceletAddress } from '../domain/cube/coordinates';
 import { CubeViewport, type CubeViewportHandle } from './components/CubeViewport';
 import { validateCube } from '../domain/validation/validateCube';
+import { runFourSolverWorker, runSolverWorker } from '../solver/workerClient';
+import { applyNxNMove, createNxNCube, isNxNSolved, type LayerMove } from '../domain/nxn/cube';
+import { check4Entry } from '../domain/nxn/validate4';
+import { formatMove4 } from '../domain/nxn/notation4';
+import type { Color } from '../domain/cube/colors';
 import type { Move } from '../domain/cube/moves';
-import { runSolverWorker } from '../solver/workerClient';
-import { applyMove } from '../domain/cube/applyMove';
-import { isSolved } from '../domain/cube/isSolved';
 
 const FACE_NAMES = { U: 'top', R: 'right', F: 'front', D: 'bottom', L: 'left', B: 'back' } as const;
-const notation = ({ face, turns }: Move) => `${face}${turns === -1 ? "'" : turns === 2 ? '2' : ''}`;
 
 export function App() {
   const [cube, setCube] = useState(createUnassignedCube);
+  const [size, setSize] = useState<3 | 4>(3);
   const [selectedColor, setSelectedColor] = useState<PaletteColor>('red');
   const [phase, setPhase] = useState<'editing' | 'invalid' | 'solving' | 'solved' | 'error'>(
     'editing',
   );
-  const [solution, setSolution] = useState<Move[]>([]);
+  const [solution, setSolution] = useState<LayerMove[]>([]);
+  const [reference, setReference] = useState<{ U: readonly Color[]; F: readonly Color[] } | null>(
+    null,
+  );
   const [validationMessage, setValidationMessage] = useState('');
   const [session, setSession] = useState(0);
   const [moveIndex, setMoveIndex] = useState(0);
@@ -33,7 +38,7 @@ export function App() {
   const [playbackError, setPlaybackError] = useState(false);
   const viewportRef = useRef<CubeViewportHandle>(null);
   const animatingRef = useRef(false);
-  const workerRef = useRef<ReturnType<typeof runSolverWorker> | null>(null);
+  const workerRef = useRef<{ dispose: () => boolean } | null>(null);
   useEffect(
     () => () => {
       workerRef.current?.dispose();
@@ -42,15 +47,16 @@ export function App() {
     [],
   );
   const counts = countColors(cube);
+  const entryCheck = size === 4 ? check4Entry(cube).status : null;
   function paint(address: FaceletAddress) {
     if (workerRef.current || phase === 'solved') return;
-    setCube((current) => paintFacelet(current, address, selectedColor));
+    setCube((current) => paintFacelet(current, address, selectedColor, size));
     setPhase('editing');
   }
   function startSolve() {
-    if (workerRef.current || phase === 'solved') return;
-    const result = validateCube(cube);
-    if (!result.valid) {
+    if (workerRef.current || phase === 'solved' || viewRotating) return;
+    const result = size === 3 ? validateCube(cube) : null;
+    if (result && !result.valid) {
       const messages: Record<typeof result.reason, string> = {
         incomplete: 'Some squares have not been assigned. Click every dotted square.',
         'color-count': 'Each color must appear exactly nine times.',
@@ -67,12 +73,17 @@ export function App() {
       setPhase('invalid');
       return;
     }
+    if (size === 4 && entryCheck !== 'counts-ok') {
+      setValidationMessage('The 4×4 entry has missing or invalid pieces. Check the message above.');
+      setPhase('invalid');
+      return;
+    }
     try {
-      const request = runSolverWorker(
-        cube,
-        () =>
-          new Worker(new URL('../workers/solver.worker.ts', import.meta.url), { type: 'module' }),
-      );
+      const createWorker = () =>
+        new Worker(new URL('../workers/solver.worker.ts', import.meta.url), { type: 'module' });
+      const request =
+        size === 3 ? runSolverWorker(cube, createWorker) : runFourSolverWorker(cube, createWorker);
+      if (size === 4) setReference({ U: [...cube.U], F: [...cube.F] });
       workerRef.current = request;
       setPhase('solving');
       request.promise
@@ -80,7 +91,11 @@ export function App() {
           if (workerRef.current !== request) return;
           workerRef.current = null;
           if (response.ok) {
-            setSolution(response.moves);
+            setSolution(
+              (response.moves as (Move | LayerMove)[]).map((move) =>
+                'layer' in move ? move : { ...move, layer: 0, width: 1 },
+              ),
+            );
             setPhase('solved');
           } else setPhase('error');
         })
@@ -97,8 +112,10 @@ export function App() {
   }
   function newCube() {
     setCube(createUnassignedCube());
+    setSize(3);
     setSelectedColor('red');
     setSolution([]);
+    setReference(null);
     setMoveIndex(0);
     setPlaybackError(false);
     setDuration(600);
@@ -109,12 +126,12 @@ export function App() {
     if (animatingRef.current || viewRotating || phase !== 'solved' || moveIndex >= solution.length)
       return;
     const move = solution[moveIndex];
-    const next = applyMove(cube, move);
+    const next = applyNxNMove(cube, size, move);
     animatingRef.current = true;
     const started = viewportRef.current?.animateMove(move, duration, next, () => {
       setCube(next);
       setMoveIndex(moveIndex + 1);
-      if (moveIndex + 1 === solution.length && !isSolved(next)) setPlaybackError(true);
+      if (moveIndex + 1 === solution.length && !isNxNSolved(next, size)) setPlaybackError(true);
       animatingRef.current = false;
       setAnimating(false);
     });
@@ -122,11 +139,30 @@ export function App() {
     else animatingRef.current = false;
   }
   const currentMove = phase === 'solved' ? solution[moveIndex] : undefined;
-  const complete = phase === 'solved' && moveIndex === solution.length && isSolved(cube);
+  const complete = phase === 'solved' && moveIndex === solution.length && isNxNSolved(cube, size);
   return (
     <main className="app-shell">
       <section className="welcome-card" aria-labelledby="app-title">
         <h1 id="app-title">CubeSolver</h1>
+        <label>
+          Cube size{' '}
+          <select
+            aria-label="Cube size"
+            value={size}
+            disabled={phase === 'solving' || phase === 'solved' || viewRotating}
+            onChange={(event) => {
+              const next = Number(event.target.value) === 4 ? 4 : 3;
+              setSize(next);
+              setCube(createNxNCube(next));
+              setSession((current) => current + 1);
+              setPhase('editing');
+            }}
+          >
+            <option value={3}>3×3</option>
+            <option value={4}>4×4</option>
+          </select>
+        </label>
+        {size === 4 && <p>Changing size clears the current entry.</p>}
         <p className="welcome-copy">
           Choose a color, then click a square. Rotate the cube to reach each face.
         </p>
@@ -144,7 +180,7 @@ export function App() {
               disabled={phase === 'solving' || phase === 'solved'}
               onClick={() => setSelectedColor(color)}
             >
-              {color} ({counts[color]}/9)
+              {color} ({counts[color]}/{size * size})
             </button>
           ))}
         </div>
@@ -154,12 +190,27 @@ export function App() {
           state={cube}
           onSelect={paint}
           disabled={phase === 'solving' || animating}
-          highlight={currentMove?.face ?? null}
+          highlight={currentMove ?? null}
           onRotationChange={setViewRotating}
+          size={size}
         />
         <p role="status">{counts.unassigned} squares remaining to assign.</p>
+        {entryCheck === 'color-count' && <p>Each color must appear exactly 16 times.</p>}
+        {entryCheck === 'corner-piece' && (
+          <p>Corner color combinations are invalid or duplicated.</p>
+        )}
+        {entryCheck === 'corner-orientation' && <p>Corner orientations are impossible.</p>}
+        {entryCheck === 'wing-piece' && (
+          <p>Edge piece color combinations are invalid or duplicated.</p>
+        )}
+        {entryCheck === 'counts-ok' && (
+          <p>
+            Color counts and piece combinations pass preliminary checks. Physical solvability has
+            not been checked.
+          </p>
+        )}
         {phase !== 'solved' && (
-          <button type="button" disabled={phase === 'solving'} onClick={startSolve}>
+          <button type="button" disabled={phase === 'solving' || viewRotating} onClick={startSolve}>
             Solve
           </button>
         )}
@@ -171,10 +222,32 @@ export function App() {
         {phase === 'solved' && (
           <section aria-label="Verified solution">
             <h2>Verified solution</h2>
-            <p>
-              Hold your physical cube with {cube.U[4]} on top (U), {cube.F[4]} in front (F), and{' '}
-              {cube.R[4]} on the right (R). Keep this orientation while following the moves.
-            </p>
+            {size === 3 ? (
+              <p>
+                Hold your physical cube with {cube.U[4]} on top (U), {cube.F[4]} in front (F), and{' '}
+                {cube.R[4]} on the right (R). Keep this orientation while following the moves.
+              </p>
+            ) : (
+              reference && (
+                <div>
+                  <p>
+                    Match the physical cube to the original top (U) and front (F) patterns below.
+                    Read each row while looking directly at that face. Keep that orientation while
+                    following moves; rotating the on-screen view does not change the move names.
+                  </p>
+                  {(['U', 'F'] as const).map((face) => (
+                    <div key={face}>
+                      <strong>{face === 'U' ? 'Original top (U)' : 'Original front (F)'}</strong>
+                      {Array.from({ length: 4 }, (_, row) => (
+                        <div key={row}>
+                          {reference[face].slice(row * 4, row * 4 + 4).join(' · ')}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
             {solution.length > 0 && (
               <p aria-label="Move sequence">
                 {solution.map((move, index) => (
@@ -183,7 +256,7 @@ export function App() {
                     className={index === moveIndex ? 'current-move' : undefined}
                     aria-current={index === moveIndex ? 'step' : undefined}
                   >
-                    {notation(move)}{' '}
+                    {formatMove4(move)}{' '}
                   </span>
                 ))}
               </p>
@@ -192,11 +265,16 @@ export function App() {
               <>
                 <p>
                   Move {moveIndex + 1} of {solution.length}:{' '}
-                  <strong>{notation(currentMove)}</strong>
+                  <strong>{formatMove4(currentMove)}</strong>
                 </p>
                 <p>
                   <span aria-hidden="true">{currentMove.turns === -1 ? '↶' : '↷'}</span> Turn the{' '}
-                  {FACE_NAMES[currentMove.face]} face ({cube[currentMove.face][4]} center){' '}
+                  {currentMove.width === 2
+                    ? 'outer two layers of the'
+                    : currentMove.layer === 1
+                      ? 'inner layer next to the'
+                      : 'outer layer of the'}{' '}
+                  {FACE_NAMES[currentMove.face]} face ({currentMove.face}){' '}
                   {currentMove.turns === 2
                     ? '180 degrees'
                     : currentMove.turns === -1
@@ -240,6 +318,9 @@ export function App() {
             )}
           </section>
         )}
+        <p>
+          <a href="./THIRD_PARTY_NOTICES.txt">Third-party software notices</a>
+        </p>
       </section>
     </main>
   );
