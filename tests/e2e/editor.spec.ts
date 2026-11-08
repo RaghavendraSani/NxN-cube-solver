@@ -78,7 +78,7 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   await page.getByRole('button', { name: 'Solve' }).click();
   await expect(
     page.getByRole('alert').or(page.getByRole('region', { name: 'Verified solution' })),
-  ).toBeVisible({ timeout: 30_000 });
+  ).toBeVisible({ timeout: 130_000 });
   expect(await page.getByRole('alert').allTextContents()).toEqual([]);
   await expect(page.getByRole('region', { name: 'Verified solution' })).toBeVisible({
     timeout: 60_000,

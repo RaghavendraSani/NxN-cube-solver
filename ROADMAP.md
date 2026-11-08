@@ -551,6 +551,10 @@ M7.
 - All nine browser tests passed against both development and production servers on the development machine. Type-check, lint, formatting, 36 unit/component tests, and production build passed.
 - Added a GitHub Actions workflow and production verification instructions. The workflow has not yet run on GitHub; clean-clone and physical-cube verification remain pending. Performance profiling and full dependency maintenance/license review remain outstanding. Vite reports a large bundle warning.
 - Updated Vitest and TypeScript ESLint after an npm audit, with a scoped minimatch override. npm audit reports zero vulnerabilities. All 36 unit tests and build/lint/format checks passed; Firefox and WebKit browser tests passed, and Chromium passed on retry after one solver timeout. The intermittent Chromium timeout remains under observation.
+- The owner confirmed GitHub Actions passed after configuring a virtual display and software rendering. Clean-clone feedback and physical-cube testing remain pending.
+- Local baseline: one solver-library fixture took 396 ms on its first run and 105–184 ms across nine later runs in the same Node process. A headless Chromium view-rotation sample recorded median 16.7 ms, 95th percentile 16.8 ms, and maximum 50 ms between animation frames (136 frames). These limited measurements are not guarantees for other scrambles or machines.
+- Direct dependencies declare MIT or Apache-2.0 licenses; npm audit reported zero findings at review time. A full transitive license and maintenance review remains pending.
+- Aligned the end-to-end test's solution wait with the application's 120-second worker watchdog and increased the overall test timeout to accommodate it. The Chromium full-flow test, type-check, lint, and formatting passed. The original cause of the intermittent delay remains unknown.
 
 ---
 
