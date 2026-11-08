@@ -4,7 +4,7 @@ CubeSolver is an offline browser application for manually recreating and solving
 
 ## Project status
 
-The architecture and implementation roadmap are approved. The 3×3 editor, state validation, locally calculated replay-verified solution, and interactive move playback are implemented. Milestone 7 awaits manual verification and approval.
+The architecture and implementation roadmap are approved. The 3×3 editor, state validation, locally calculated replay-verified solution, and interactive move playback are implemented. Milestone 7 is approved.
 
 The initial implementation target is a complete 3×3×3 experience. Support for 4×4×4 through 20×20×20 will be added incrementally.
 
@@ -48,7 +48,7 @@ The exact dependency versions will be pinned when the implementation bootstrap m
 ### Prerequisites
 
 - Git.
-- Node.js current supported LTS release and npm.
+- Node.js 22.12–22.x, 24.x, or 26 and later, plus npm. Node.js 23 and 25 are not supported by the current Vitest version.
 - A modern browser with WebGL 2 support.
 - An editor with TypeScript support.
 
@@ -70,13 +70,25 @@ npm test
 npm run build
 ```
 
-To run the Chromium browser test, install its browser once and run:
+To run the browser tests, install the Playwright browsers once and run:
 
 ```powershell
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm run test:e2e
 ```
 
+To test the built application through a local static server in PowerShell:
+
+```powershell
+npm run build
+$env:PLAYWRIGHT_PREVIEW = '1'
+npm run test:e2e
+Remove-Item Env:PLAYWRIGHT_PREVIEW
+```
+
+The application uses local files and makes no external runtime requests. A local static server must remain available for loading the application and its worker; this does not install an offline cache for use after disconnecting from that server.
+
+The workflow in `.github/workflows/ci.yml` runs on pushes, pull requests, or manual invocation in GitHub Actions. It installs the locked dependencies and Playwright browsers, then runs the checks against the production build.
 
 ## Contribution workflow
 
@@ -84,7 +96,7 @@ npm run test:e2e
 
 ## Current limitations
 
-- Playback has not yet been verified against a physical cube or across all target browsers.
+- Playback has not yet been verified against a physical cube.
 - Only the 3×3 solver is planned for the first complete release.
 - Camera scanning, persistence, accounts, cloud synchronization, and accessibility enhancements are deferred.
 

@@ -6,6 +6,12 @@ import { FACES } from '../../src/domain/cube/faces';
 import { createSolvedCube } from '../../src/domain/cube/state';
 
 test('enters a scrambled cube and receives a verified worker solution', async ({ page }) => {
+  const externalRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.protocol !== 'blob:' && url.hostname !== '127.0.0.1')
+      externalRequests.push(request.url());
+  });
   await page.goto('/');
   await page.getByRole('button', { name: 'Solve' }).click();
   await expect(page.getByRole('alert')).toContainText('Some squares have not been assigned');
@@ -102,4 +108,5 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   await expect(page.getByText('Cube solved!')).toBeVisible();
   await page.getByRole('button', { name: 'New Cube' }).click();
   await expect(page.getByText('54 squares remaining to assign.')).toBeVisible();
+  expect(externalRequests).toEqual([]);
 });

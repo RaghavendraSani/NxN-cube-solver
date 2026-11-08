@@ -443,7 +443,7 @@ M5.
 
 ## M7 — Interactive move playback
 
-**Status:** Implemented; awaiting owner manual verification and approval.
+**Status:** Complete and approved.
 
 ### Objective and expected outcome
 
@@ -495,11 +495,13 @@ M6.
 - Added highlighted layers, move notation and directions, one-move animation, adjustable speed, playback progress, and solved-state confirmation.
 - Logical moves commit after animation; move and view controls are locked while they would conflict. New Cube appears on completion or a playback error.
 - Automated layer geometry tests check every sticker destination for all face turns. A Chromium test enters a scramble, solves it, and advances through the entire solution.
-- Manual physical-cube verification and owner approval remain pending; broader browser coverage is planned for M8.
+- Owner approved M7. Physical-cube verification and broader browser coverage remain planned for M8.
 
 ---
 
 ## M8 — End-to-end hardening and 3×3 MVP release
+
+**Status:** In progress; local verification passed, GitHub Actions and clean-clone verification pending.
 
 ### Objective and expected outcome
 
@@ -541,6 +543,14 @@ M7.
 
 - The 3×3 MVP meets every requirement in the MVP section of `REQUIREMENTS.md`.
 - A friend can clone the repository, follow the setup instructions, and run the application.
+
+### Actual progress and verification
+
+- Existing validator tests cover legal scrambles and invalid center, orientation, piece, and parity cases.
+- Added Chromium, Firefox, and WebKit coverage for the complete flow, resize, refresh, loss of network after loading, and unavailable WebGL. The complete-flow test checks for external requests.
+- All nine browser tests passed against both development and production servers on the development machine. Type-check, lint, formatting, 36 unit/component tests, and production build passed.
+- Added a GitHub Actions workflow and production verification instructions. The workflow has not yet run on GitHub; clean-clone and physical-cube verification remain pending. Performance profiling and full dependency maintenance/license review remain outstanding. Vite reports a large bundle warning.
+- Updated Vitest and TypeScript ESLint after an npm audit, with a scoped minimatch override. npm audit reports zero vulnerabilities. All 36 unit tests and build/lint/format checks passed; Firefox and WebKit browser tests passed, and Chromium passed on retry after one solver timeout. The intermittent Chromium timeout remains under observation.
 
 ---
 
