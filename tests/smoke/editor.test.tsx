@@ -76,8 +76,8 @@ describe('editor', () => {
     expect(screen.getByRole('region', { name: 'Verified solution' })).toHaveTextContent('R');
     expect(screen.getByText(/Hold your physical cube/)).toBeInTheDocument();
     expect(instance.terminate).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'New Cube' }));
-    expect(screen.getByRole('button', { name: 'Solve' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Next move' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'New Cube' })).not.toBeInTheDocument();
   });
 
   it('reports a worker failure and allows the user to try again', async () => {

@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M6 implemented; awaiting browser verification
+**Status:** M6 complete and approved
 
-**Current phase:** 3×3 solver worker and solution verification
+**Current phase:** Awaiting Milestone 7
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -27,7 +27,7 @@ Recommended status values:
 | M3 | Three.js 3×3 model and facelet hit mapping | Complete | M2 |
 | M4 | Palette painting and animated view navigation | Complete | M3 |
 | M5 | 3×3 validation | Complete | M4 |
-| M6 | Solver worker and verified solution generation | In progress | M5 |
+| M6 | Solver worker and verified solution generation | Complete | M5 |
 | M7 | Interactive move playback | Not started | M6 |
 | M8 | End-to-end hardening and MVP release | Not started | M7 |
 | M9 | NxN domain and notation extension for 4×4 | Not started | M8 |
@@ -380,7 +380,7 @@ M4.
 
 ## M6 — Solver Worker and verified solution generation
 
-**Status:** Implemented; real-browser worker verification and approval pending.
+**Status:** Complete and approved.
 
 ### Objective and expected outcome
 
@@ -435,13 +435,15 @@ M5.
 - Added independent move replay before returning a solution, structured worker responses, editing locks, failure handling, move display, and a New Cube action.
 - The solved-state, generated-scramble, independent facelet fixture, invalid-input, corrupted-result, and UI worker-mock tests pass.
 - Type-check, lint, formatting, production build, and 31 tests pass. The existing Vite bundle-size warning remains.
-- A real-browser end-to-end worker test and responsiveness check remain to be verified. Animated playback remains M7.
+- The Chromium end-to-end worker test passed; the user also tested a scramble against an online solver, and both move sequences were replayed successfully against the online cube state. Animated playback remains M7.
 - Approved follow-up fix implemented: support all 24 whole-cube orientations of the fixed color scheme, distinguish unassigned facelets with dots, and show specific validation guidance. All 34 tests, type-check, lint, formatting, and build pass; browser verification remains pending.
 - Review follow-up: added orientation guidance using center colors, enabled view rotation after solving, added a two-minute worker failure watchdog, and added a Chromium end-to-end test. Browser test passed on two reruns after an initial timeout; additional cross-browser and physical-cube verification remains pending.
 
 ---
 
 ## M7 — Interactive move playback
+
+**Status:** Implemented; awaiting owner manual verification and approval.
 
 ### Objective and expected outcome
 
@@ -487,6 +489,13 @@ M6.
 
 - A user can follow a complete 3×3 solution interactively from scramble to solved digital cube.
 - Playback is not a passive video and never advances multiple moves at once.
+
+### Actual progress and verification
+
+- Added highlighted layers, move notation and directions, one-move animation, adjustable speed, playback progress, and solved-state confirmation.
+- Logical moves commit after animation; move and view controls are locked while they would conflict. New Cube appears on completion or a playback error.
+- Automated layer geometry tests check every sticker destination for all face turns. A Chromium test enters a scramble, solves it, and advances through the entire solution.
+- Manual physical-cube verification and owner approval remain pending; broader browser coverage is planned for M8.
 
 ---
 

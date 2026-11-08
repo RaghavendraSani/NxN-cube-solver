@@ -77,6 +77,29 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   });
   await expect(page.getByText(/Hold your physical cube with white on top/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Rotate right' })).toBeEnabled();
+  await page.getByLabel('Animation speed').selectOption('1200');
+  const totalMoves = (await page.getByLabel('Move sequence').textContent())!
+    .trim()
+    .split(/\s+/).length;
+  const next = page.getByRole('button', { name: 'Next move' });
+  const firstMove = await page.getByText(/^Move 1 of /).textContent();
+  await next.click();
+  await expect(next).toBeDisabled();
+  await expect(page.getByText(/^Move 1 of /)).toHaveText(firstMove!);
+  await expect(page.getByText(/^Move 2 of /)).toBeVisible({ timeout: 5000 });
+  await page.getByLabel('Animation speed').selectOption('250');
+  let steps = 1;
+  while (await next.isVisible()) {
+    await expect(page.getByText(new RegExp(`^Move ${steps + 1} of ${totalMoves}:`))).toBeVisible();
+    await next.click();
+    steps++;
+    await expect(next.and(page.locator(':enabled')).or(page.getByText('Cube solved!'))).toBeVisible(
+      { timeout: 5000 },
+    );
+    if (steps > 100) throw new Error('Playback did not finish');
+  }
+  expect(steps).toBe(totalMoves);
+  await expect(page.getByText('Cube solved!')).toBeVisible();
   await page.getByRole('button', { name: 'New Cube' }).click();
   await expect(page.getByText('54 squares remaining to assign.')).toBeVisible();
 });

@@ -4,7 +4,7 @@ CubeSolver is an offline browser application for manually recreating and solving
 
 ## Project status
 
-The architecture and implementation roadmap are approved. The 3×3 editor and state validation are complete. A locally calculated, replay-verified solution is implemented and awaiting browser verification; move animation is not implemented yet.
+The architecture and implementation roadmap are approved. The 3×3 editor, state validation, locally calculated replay-verified solution, and interactive move playback are implemented. Milestone 7 awaits manual verification and approval.
 
 The initial implementation target is a complete 3×3×3 experience. Support for 4×4×4 through 20×20×20 will be added incrementally.
 
@@ -20,7 +20,7 @@ The initial implementation target is a complete 3×3×3 experience. Support for 
 - Complete validation before solving.
 - Guaranteed-correct solution prioritized over solution length.
 - Web Worker-based solving so the interface remains responsive.
-- Interactive playback one move at a time with adjustable animation speed is planned for M7.
+- Interactive playback advances one move at a time with adjustable animation speed.
 - No persistence of incomplete entries.
 
 ## Documentation
@@ -84,7 +84,7 @@ npm run test:e2e
 
 ## Current limitations
 
-- Interactive move playback is not implemented yet.
+- Playback has not yet been verified against a physical cube or across all target browsers.
 - Only the 3×3 solver is planned for the first complete release.
 - Camera scanning, persistence, accounts, cloud synchronization, and accessibility enhancements are deferred.
 

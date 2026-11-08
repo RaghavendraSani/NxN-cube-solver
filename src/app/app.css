@@ -132,6 +132,13 @@ h1 {
   line-height: 1.5;
 }
 
+.current-move {
+  background: #ffe16b;
+  border-radius: 0.2rem;
+  font-weight: 700;
+  padding: 0.1rem 0.2rem;
+}
+
 @media (max-width: 36rem) {
   .app-shell {
     padding: 1rem;

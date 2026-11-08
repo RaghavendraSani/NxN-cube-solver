@@ -9,6 +9,8 @@ import {
 } from 'three';
 import type { FaceletAddress } from '../domain/cube/coordinates';
 import type { CubeState } from '../domain/cube/types';
+import type { Move } from '../domain/cube/moves';
+import type { Face } from '../domain/cube/faces';
 import { createCubeScene } from './cubeScene';
 import { pickFacelet } from './pickFacelet';
 
@@ -64,6 +66,11 @@ export class CubeRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
+  setHighlight(face: Face | null) {
+    this.cube.setHighlight(face);
+    this.renderer.render(this.scene, this.camera);
+  }
+
   rotate(axis: 'x' | 'y', direction: 1 | -1, onComplete: () => void): boolean {
     if (this.frame !== null) return false;
     const start = this.cube.group.quaternion.clone();
@@ -79,6 +86,28 @@ export class CubeRenderer {
       this.renderer.render(this.scene, this.camera);
       if (progress < 1) this.frame = requestAnimationFrame(animate);
       else {
+        this.frame = null;
+        onComplete();
+      }
+    };
+    this.frame = requestAnimationFrame(animate);
+    return true;
+  }
+
+  animateMove(move: Move, duration: number, nextState: CubeState, onComplete: () => void): boolean {
+    if (this.frame !== null) return false;
+    const layer = this.cube.beginLayerTurn(move);
+    const started = performance.now();
+    const animate = (now: number) => {
+      const progress = Math.min((now - started) / duration, 1);
+      layer.setProgress(progress);
+      if (progress < 1) {
+        this.renderer.render(this.scene, this.camera);
+        this.frame = requestAnimationFrame(animate);
+      } else {
+        layer.finish();
+        this.cube.setState(nextState);
+        this.renderer.render(this.scene, this.camera);
         this.frame = null;
         onComplete();
       }

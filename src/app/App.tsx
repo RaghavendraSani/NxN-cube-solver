@@ -7,10 +7,15 @@ import {
   type PaletteColor,
 } from '../domain/cube/inputState';
 import type { FaceletAddress } from '../domain/cube/coordinates';
-import { CubeViewport } from './components/CubeViewport';
+import { CubeViewport, type CubeViewportHandle } from './components/CubeViewport';
 import { validateCube } from '../domain/validation/validateCube';
 import type { Move } from '../domain/cube/moves';
 import { runSolverWorker } from '../solver/workerClient';
+import { applyMove } from '../domain/cube/applyMove';
+import { isSolved } from '../domain/cube/isSolved';
+
+const FACE_NAMES = { U: 'top', R: 'right', F: 'front', D: 'bottom', L: 'left', B: 'back' } as const;
+const notation = ({ face, turns }: Move) => `${face}${turns === -1 ? "'" : turns === 2 ? '2' : ''}`;
 
 export function App() {
   const [cube, setCube] = useState(createUnassignedCube);
@@ -21,6 +26,13 @@ export function App() {
   const [solution, setSolution] = useState<Move[]>([]);
   const [validationMessage, setValidationMessage] = useState('');
   const [session, setSession] = useState(0);
+  const [moveIndex, setMoveIndex] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const [viewRotating, setViewRotating] = useState(false);
+  const [duration, setDuration] = useState(600);
+  const [playbackError, setPlaybackError] = useState(false);
+  const viewportRef = useRef<CubeViewportHandle>(null);
+  const animatingRef = useRef(false);
   const workerRef = useRef<ReturnType<typeof runSolverWorker> | null>(null);
   useEffect(
     () => () => {
@@ -87,9 +99,30 @@ export function App() {
     setCube(createUnassignedCube());
     setSelectedColor('red');
     setSolution([]);
+    setMoveIndex(0);
+    setPlaybackError(false);
+    setDuration(600);
     setSession((current) => current + 1);
     setPhase('editing');
   }
+  function nextMove() {
+    if (animatingRef.current || viewRotating || phase !== 'solved' || moveIndex >= solution.length)
+      return;
+    const move = solution[moveIndex];
+    const next = applyMove(cube, move);
+    animatingRef.current = true;
+    const started = viewportRef.current?.animateMove(move, duration, next, () => {
+      setCube(next);
+      setMoveIndex(moveIndex + 1);
+      if (moveIndex + 1 === solution.length && !isSolved(next)) setPlaybackError(true);
+      animatingRef.current = false;
+      setAnimating(false);
+    });
+    if (started) setAnimating(true);
+    else animatingRef.current = false;
+  }
+  const currentMove = phase === 'solved' ? solution[moveIndex] : undefined;
+  const complete = phase === 'solved' && moveIndex === solution.length && isSolved(cube);
   return (
     <main className="app-shell">
       <section className="welcome-card" aria-labelledby="app-title">
@@ -115,7 +148,15 @@ export function App() {
             </button>
           ))}
         </div>
-        <CubeViewport key={session} state={cube} onSelect={paint} disabled={phase === 'solving'} />
+        <CubeViewport
+          key={session}
+          ref={viewportRef}
+          state={cube}
+          onSelect={paint}
+          disabled={phase === 'solving' || animating}
+          highlight={currentMove?.face ?? null}
+          onRotationChange={setViewRotating}
+        />
         <p role="status">{counts.unassigned} squares remaining to assign.</p>
         {phase !== 'solved' && (
           <button type="button" disabled={phase === 'solving'} onClick={startSolve}>
@@ -134,18 +175,69 @@ export function App() {
               Hold your physical cube with {cube.U[4]} on top (U), {cube.F[4]} in front (F), and{' '}
               {cube.R[4]} on the right (R). Keep this orientation while following the moves.
             </p>
-            {solution.length === 0 ? (
-              <p>The cube is already solved.</p>
-            ) : (
-              <p>
-                {solution
-                  .map(({ face, turns }) => `${face}${turns === -1 ? "'" : turns === 2 ? '2' : ''}`)
-                  .join(' ')}
+            {solution.length > 0 && (
+              <p aria-label="Move sequence">
+                {solution.map((move, index) => (
+                  <span
+                    key={index}
+                    className={index === moveIndex ? 'current-move' : undefined}
+                    aria-current={index === moveIndex ? 'step' : undefined}
+                  >
+                    {notation(move)}{' '}
+                  </span>
+                ))}
               </p>
             )}
-            <button type="button" onClick={newCube}>
-              New Cube
-            </button>
+            {currentMove && (
+              <>
+                <p>
+                  Move {moveIndex + 1} of {solution.length}:{' '}
+                  <strong>{notation(currentMove)}</strong>
+                </p>
+                <p>
+                  <span aria-hidden="true">{currentMove.turns === -1 ? '↶' : '↷'}</span> Turn the{' '}
+                  {FACE_NAMES[currentMove.face]} face ({cube[currentMove.face][4]} center){' '}
+                  {currentMove.turns === 2
+                    ? '180 degrees'
+                    : currentMove.turns === -1
+                      ? 'counterclockwise'
+                      : 'clockwise'}
+                  , as viewed directly facing that face.
+                </p>
+                <p>
+                  The yellow highlight marks the moving layer. Rotate the view if the face is
+                  hidden.
+                </p>
+                <label>
+                  Animation speed{' '}
+                  <select
+                    value={duration}
+                    onChange={(event) => setDuration(Number(event.target.value))}
+                    disabled={animating}
+                  >
+                    <option value={1200}>Slow</option>
+                    <option value={600}>Normal</option>
+                    <option value={250}>Fast</option>
+                  </select>
+                </label>{' '}
+                <button type="button" onClick={nextMove} disabled={animating || viewRotating}>
+                  Next move
+                </button>
+              </>
+            )}
+            {complete && (
+              <p role="status">
+                {solution.length === 0 ? 'The cube is already solved.' : 'Cube solved!'}
+              </p>
+            )}
+            {playbackError && (
+              <p role="alert">Playback did not reach a solved state. Start a new cube.</p>
+            )}
+            {(complete || playbackError) && (
+              <button type="button" onClick={newCube}>
+                New Cube
+              </button>
+            )}
           </section>
         )}
       </section>
