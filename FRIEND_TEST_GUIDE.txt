@@ -1,0 +1,119 @@
+CUBESOLVER: FRESH CLONE AND TEST GUIDE
+
+Purpose
+-------
+Please install a fresh copy of the project, run it, and report what happens.
+This guide uses Windows PowerShell. You do not need a physical cube.
+
+Step 1: Install prerequisites
+-----------------------------
+1. Install Git for Windows from https://git-scm.com/download/win.
+2. Install a supported Node.js release from https://nodejs.org/:
+   Node 22.12 through 22.x, 24.x, or 26 and later. Node 24 is a
+   suitable choice. npm is included with Node.js.
+3. Close and reopen PowerShell after installing either program.
+4. Run these commands, one at a time:
+
+   git --version
+   node --version
+   npm --version
+
+   Each command should print a version. If one is not recognized, make
+   sure its installer completed and restart the terminal.
+
+Step 2: Clone into a new folder
+-------------------------------
+1. Open PowerShell in a parent folder where you want the new project folder.
+   For example, open Documents in File Explorer, click its address bar,
+   type powershell, and press Enter.
+2. Run:
+
+   git clone https://github.com/RaghavendraSani/NxN-cube-solver.git
+   cd NxN-cube-solver
+   git switch main
+   git log -1 --oneline
+
+3. The last command shows which commit you are testing. Include its output
+   in your report. If you already have a folder with that name, clone from a
+   different parent folder so the test uses a fresh copy.
+
+Step 3: Install dependencies and start the app
+----------------------------------------------
+1. In the same project terminal, run:
+
+   npm ci
+   npm run dev
+
+2. Wait until the terminal prints a local address, usually
+   http://localhost:5173/. Open the exact address shown in a modern browser.
+3. Leave this terminal running while you use the application. To stop the
+   server afterward, return to the terminal and press Ctrl+C.
+4. If npm reports an install-script warning, record it in your report; do
+   not use npm audit fix --force as part of this test.
+
+Step 4: Check editing and validation
+-----------------------------------
+1. Confirm a cube and six color buttons appear.
+2. Choose a color, click one square, and confirm only that square changes.
+3. Choose another color and click the same square. Confirm it changes again.
+4. Use the rotation buttons to expose all six faces. Confirm the cube animates
+   and previously painted squares retain their colors.
+5. With some squares still unassigned, click Solve. Confirm the app reports
+   that squares are missing and lets you continue editing.
+6. Refresh the page. Confirm the incomplete entry is cleared. If necessary,
+   refresh again before the next test so the cube starts unassigned.
+
+Step 5: Enter a valid test scramble without a physical cube
+-----------------------------------------------------------
+Paint all nine squares of each face using the table below. Each line is one
+face: repeat the listed left-to-right sequence for all three rows. Judge
+left and right while looking directly at that face; rotate the displayed
+cube using the buttons as needed. Ensure every dot marking an unassigned
+square disappears.
+
+  Face        Top row          Middle row       Bottom row
+  Top (U)     white white green  white white green  white white green
+  Right (R)   red   red   red    red   red   red    red   red   red
+  Front (F)   green green yellow green green yellow green green yellow
+  Bottom (D)  yellow yellow blue yellow yellow blue yellow yellow blue
+  Left (L)    orange orange orange, on all three rows
+  Back (B)    white blue blue    white blue blue    white blue blue
+
+The center colors identify the intended faces: white top, red right, green
+front, yellow bottom, orange left, and blue back. When a face is viewed at an
+angle, use the cube's rotation buttons to orient it before judging its rows.
+
+Step 6: Test solving and playback
+--------------------------------
+1. Click Solve. The app should calculate and display a verified solution.
+2. Read the move, affected face, direction, and center-color instructions.
+3. Choose Slow speed and click Next move. Confirm the highlighted layer
+   animates and that the app does not advance multiple moves at once.
+4. Continue one move at a time. Try the other animation speeds, and rotate
+   the whole-cube view when needed to see the affected face.
+5. Confirm the cube ends with each face a single color and the app displays
+   Cube solved! Click New Cube and confirm a fresh entry appears.
+6. If a solution takes a while, wait for an on-screen result or error; do
+   not close the browser immediately.
+
+Optional: test a physical cube
+------------------------------
+If you have a 3x3 cube, scramble it and enter all six faces accurately. After
+solving, orient the physical cube as directed by the displayed top, front,
+and right center colors. Follow every move, viewing its direction directly
+from the named face, and check that both cubes end solved. Record any move
+where the physical and on-screen cubes first disagree.
+
+Step 7: Report your results
+---------------------------
+Send the project owner:
+
+* The commit ID printed in Step 2.
+* Your operating system, browser and version, and Node version.
+* Whether installation and app startup succeeded.
+* Whether editing, rotation, invalid-input feedback, solving, playback,
+  speed changes, and New Cube worked.
+* If you used a physical cube, whether it was solved.
+* Any error message, the step where it happened, and a screenshot if useful.
+
+Do not send credentials, access tokens, or unrelated private files.
