@@ -14,7 +14,9 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Solve' }).click();
-  await expect(page.getByRole('alert')).toContainText('Some squares have not been assigned');
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Some squares have not been assigned' }),
+  ).toBeVisible();
   const cube = applyMove(applyMove(createSolvedCube(), { face: 'R', turns: 1 }), {
     face: 'F',
     turns: -1,
