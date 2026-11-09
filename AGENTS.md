@@ -10,7 +10,7 @@ This file contains persistent working rules. It intentionally does not duplicate
 
 ## Current project state
 
-Milestones 6 and 7 are complete and approved. Milestone 8 is approved with outstanding items recorded in ROADMAP.md. Milestones 9 and 10 are prepared for release verification; do not begin Milestone 11 until requested by the owner. Ask for the owner's approval before writing or changing code, and explain the purpose of proposed changes.
+Milestones 6 through 10 are approved; outstanding limitations are recorded in ROADMAP.md. Do not begin Milestone 11 until requested by the owner. Ask for the owner's approval before writing or changing code, and explain the purpose of proposed changes.
 
 ## Scope rules
 

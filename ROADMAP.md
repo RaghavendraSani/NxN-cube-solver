@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M8 approved with recorded exceptions; M9 and M10 prepared for release verification
+**Status:** M8, M9, and M10 approved with recorded limitations
 
-**Current phase:** 4×4 validation, solving, and testing
+**Current phase:** Awaiting owner request for M11
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -30,8 +30,8 @@ Recommended status values:
 | M6 | Solver worker and verified solution generation | Complete | M5 |
 | M7 | Interactive move playback | Complete | M6 |
 | M8 | End-to-end hardening and MVP release | Approved with exceptions | M7 |
-| M9 | NxN domain and notation extension for 4×4 | Awaiting release verification | M8 |
-| M10 | 4×4 solving, parity, and playback | Awaiting release verification | M9 |
+| M9 | NxN domain and notation extension for 4×4 | Complete and approved | M8 |
+| M10 | 4×4 solving, parity, and playback | Complete and approved | M9 |
 | M11 | 5×5 and generalized reduction foundations | Not started | M10 |
 | M12 | Larger-cube performance and 6×6–20×20 expansion | Not started | M11 |
 
@@ -567,7 +567,9 @@ M7.
 
 ## M9 — NxN domain and notation extension for 4×4
 
-**Status:** Implementation prepared for release; GitHub checks and owner milestone acceptance remain pending.
+**Status:** Complete and approved by owner, with the limitations below.
+
+The owner confirmed the release checks passed and approved M9 and M10. Physical 4×4 guidance has not been verified, validator implementation has not been formally proved, and universal solver completion within the timeout is not established.
 
 **Testing scope requested by owner:** Retain the existing correctness, parity, invalid-state, regression, and browser checks; do not add large stress-test campaigns solely for extra confidence. Physical 4×4 testing and additional hardware performance sampling are deferred when unavailable, and must not be reported as verified. The validation/reachability review, verified-solution replay, and checks required by the project instructions remain necessary before enabling 4×4 solving by default.
 
@@ -631,6 +633,8 @@ M8.
 ---
 
 ## M10 — 4×4 solving, parity, and playback
+
+**Status:** Complete and approved by owner, subject to the M9 limitations above.
 
 ### Objective and expected outcome
 

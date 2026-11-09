@@ -4,7 +4,7 @@ CubeSolver is an offline browser application for manually recreating and solving
 
 ## Project status
 
-The 3×3 and 4×4 editors, locally calculated replay-verified solutions, and interactive move playback are implemented. The 4×4 release is awaiting final GitHub checks and owner verification.
+The 3×3 and 4×4 editors, locally calculated replay-verified solutions, and interactive move playback are implemented. The owner has approved milestones 9 and 10; known limitations are recorded below and in the roadmap.
 
 The current implementation supports 3×3×3 and 4×4×4. Support for 5×5×5 through 20×20×20 is planned incrementally.
 
