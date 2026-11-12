@@ -39,6 +39,7 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
     'Rotate up',
     'Rotate up',
   ] as const;
+  // Project visible facelets into canvas coordinates as the view rotates.
   for (const rotation of rotations) {
     if (rotation) {
       const button = page.getByRole('button', { name: rotation });
@@ -88,6 +89,7 @@ test('enters a scrambled cube and receives a verified worker solution', async ({
   });
   await expect(page.getByText(/Hold your physical cube with white on top/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Rotate right' })).toBeEnabled();
+  // Exercise the actual worker separately with a 4×4 state and replay its response.
   const four = applyNxNMove(createNxNCube(4, true), 4, { face: 'R', layer: 0, width: 2, turns: 1 });
   const response = await page.evaluate(
     async ({ workerUrl, state }) => {

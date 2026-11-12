@@ -6,6 +6,7 @@ export function runSolverWorker(state: CubeState, createWorker: () => Worker, ti
   return runWorker<SolveResponse>({ state }, createWorker, timeoutMs);
 }
 
+/** Run a 4×4 solve with the same timeout and cleanup behavior as 3×3. */
 export function runFourSolverWorker(
   state: CubeState,
   createWorker: () => Worker,
@@ -14,10 +15,12 @@ export function runFourSolverWorker(
   return runWorker<FourSolveResponse>({ size: 4, state }, createWorker, timeoutMs);
 }
 
+/** Settle a worker request once and release it on success, failure, or timeout. */
 function runWorker<Response>(request: SolveRequest, createWorker: () => Worker, timeoutMs: number) {
   const worker = createWorker();
   let settled = false;
   let timer: ReturnType<typeof setTimeout>;
+  // The first result or failure owns cleanup; later worker events are ignored.
   const cleanup = () => {
     if (settled) return false;
     settled = true;

@@ -1,3 +1,4 @@
+/* Shared typography and page defaults. */
 :root {
   font-family:
     Inter,
@@ -30,6 +31,7 @@ select {
   font: inherit;
 }
 
+/* Center the editor card and keep it usable on smaller screens. */
 .app-shell {
   display: grid;
   min-height: 100vh;
@@ -46,15 +48,6 @@ select {
   box-shadow: 0 1rem 3rem rgb(31 41 55 / 10%);
 }
 
-.eyebrow {
-  margin: 0 0 0.75rem;
-  color: #2563eb;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 h1 {
   margin: 0;
   color: #111827;
@@ -69,6 +62,7 @@ h1 {
   line-height: 1.6;
 }
 
+/* Reserve a responsive area for the Three.js canvas. */
 .cube-viewport {
   width: 100%;
   height: min(60vw, 25rem);
@@ -80,6 +74,7 @@ h1 {
   display: block;
 }
 
+/* Palette and rotation controls wrap when space is limited. */
 .palette,
 .view-controls {
   display: flex;
@@ -123,15 +118,7 @@ h1 {
   opacity: 0.5;
 }
 
-.status-message {
-  margin: 2rem 0 0;
-  padding: 0.9rem 1rem;
-  border-left: 0.25rem solid #2563eb;
-  background: #eff6ff;
-  color: #1e3a8a;
-  line-height: 1.5;
-}
-
+/* Mark the move currently being shown in the solution. */
 .current-move {
   background: #ffe16b;
   border-radius: 0.2rem;

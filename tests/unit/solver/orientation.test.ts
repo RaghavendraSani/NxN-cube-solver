@@ -10,15 +10,16 @@ import { applyMove } from '../../../src/domain/cube/applyMove';
 import { validateCube } from '../../../src/domain/validation/validateCube';
 import { solveCube, verifySolution } from '../../../src/solver/solveCube';
 
+/** Rotate the whole cube to test a different physical orientation. */
 function rotate(state: CubeState, axis: Vector3): CubeState {
   const result = Object.fromEntries(FACES.map((face) => [face, Array<Color>(9)])) as Record<
     Face,
     Color[]
   >;
-  const q = new Quaternion().setFromAxisAngle(axis, Math.PI / 2);
-  const transform = (v: readonly [number, number, number]): [number, number, number] => {
-    const p = new Vector3(...v).applyQuaternion(q);
-    return [Math.round(p.x), Math.round(p.y), Math.round(p.z)];
+  const rotation = new Quaternion().setFromAxisAngle(axis, Math.PI / 2);
+  const transform = (vector: readonly [number, number, number]): [number, number, number] => {
+    const rotated = new Vector3(...vector).applyQuaternion(rotation);
+    return [Math.round(rotated.x), Math.round(rotated.y), Math.round(rotated.z)];
   };
   for (const face of FACES)
     for (let row = 0; row < 3; row++)

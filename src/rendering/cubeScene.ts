@@ -26,6 +26,7 @@ const COLOR_VALUES: Record<Color, number> = {
   unassigned: 0xffffff,
 };
 
+/** Build the cube meshes and expose operations used by the renderer. */
 export function createCubeScene(size = 3) {
   const group = new Group();
   const step = 3 / size;
@@ -57,6 +58,7 @@ export function createCubeScene(size = 3) {
     opacity: 0.35,
     depthWrite: false,
   });
+  // Stickers retain logical addresses even when the displayed cube rotates.
   for (const face of FACES) {
     for (let row = 0; row < size; row++) {
       for (let column = 0; column < size; column++) {
@@ -87,6 +89,7 @@ export function createCubeScene(size = 3) {
   return {
     group,
     facelets,
+    /** Show which stickers belong to the selected layer range. */
     setHighlight(face: Face | null, layer = 0, width = 1) {
       const axis = face === null ? null : new Vector3(...FACE_BASIS[face][0]);
       for (const sticker of facelets) {
@@ -95,6 +98,7 @@ export function createCubeScene(size = 3) {
         sticker.children[1].visible = axis !== null && index >= layer && index < layer + width;
       }
     },
+    /** Temporarily group the selected meshes so they can turn together. */
     beginLayerTurn(move: Move | LayerMove) {
       const normal = FACE_BASIS[move.face][0];
       const axis = new Vector3(...normal);
@@ -129,9 +133,11 @@ export function createCubeScene(size = 3) {
       }));
       selected.forEach((object) => pivot.add(object));
       return {
+        /** Rotate the temporary group to the requested animation progress. */
         setProgress(progress: number) {
           pivot.quaternion.setFromAxisAngle(axis, (-move.turns * Math.PI * progress) / 2);
         },
+        /** Restore mesh positions; the caller then paints the next state. */
         finish() {
           for (const { object, position, quaternion } of originals) {
             group.add(object);
@@ -142,6 +148,7 @@ export function createCubeScene(size = 3) {
         },
       };
     },
+    /** Update sticker colors and unassigned markers. */
     setState(state: CubeState) {
       for (const sticker of facelets) {
         const { face, row, column } = sticker.userData.address as FaceletAddress;
@@ -149,6 +156,7 @@ export function createCubeScene(size = 3) {
         sticker.children[0].visible = state[face][row * size + column] === 'unassigned';
       }
     },
+    /** Dispose shared geometries and materials once. */
     dispose() {
       bodyGeometry.dispose();
       bodyMaterial.dispose();

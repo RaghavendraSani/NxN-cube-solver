@@ -15,6 +15,7 @@ export const PALETTE_COLORS: readonly PaletteColor[] = [
   'orange',
 ];
 
+/** Paint one validated facelet without changing the input cube. */
 export function paintFacelet(
   state: CubeState,
   address: FaceletAddress,
@@ -28,6 +29,7 @@ export function paintFacelet(
   return { ...state, [address.face]: face };
 }
 
+/** Count assigned and unassigned facelets across all six faces. */
 export function countColors(state: CubeState): Record<Color, number> {
   const counts: Record<Color, number> = {
     red: 0,

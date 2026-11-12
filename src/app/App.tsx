@@ -18,7 +18,9 @@ import type { Move } from '../domain/cube/moves';
 
 const FACE_NAMES = { U: 'top', R: 'right', F: 'front', D: 'bottom', L: 'left', B: 'back' } as const;
 
+/** Coordinate cube entry, worker solving, and one-move-at-a-time playback. */
 export function App() {
+  // Puzzle state and display animation state remain separate throughout the session.
   const [cube, setCube] = useState(createUnassignedCube);
   const [size, setSize] = useState<3 | 4>(3);
   const [selectedColor, setSelectedColor] = useState<PaletteColor>('red');
@@ -39,6 +41,7 @@ export function App() {
   const viewportRef = useRef<CubeViewportHandle>(null);
   const animatingRef = useRef(false);
   const workerRef = useRef<{ dispose: () => boolean } | null>(null);
+  // Stop the active worker if the component is removed.
   useEffect(
     () => () => {
       workerRef.current?.dispose();
@@ -48,11 +51,13 @@ export function App() {
   );
   const counts = countColors(cube);
   const entryCheck = size === 4 ? check4Entry(cube).status : null;
+  /** Paint one selected facelet while editing is available. */
   function paint(address: FaceletAddress) {
     if (workerRef.current || phase === 'solved') return;
     setCube((current) => paintFacelet(current, address, selectedColor, size));
     setPhase('editing');
   }
+  /** Validate the entry and request a verified solution from the worker. */
   function startSolve() {
     if (workerRef.current || phase === 'solved' || viewRotating) return;
     const result = size === 3 ? validateCube(cube) : null;
@@ -110,6 +115,7 @@ export function App() {
       setPhase('error');
     }
   }
+  /** Reset the entire in-memory session for a new entry. */
   function newCube() {
     setCube(createUnassignedCube());
     setSize(3);
@@ -122,6 +128,7 @@ export function App() {
     setSession((current) => current + 1);
     setPhase('editing');
   }
+  /** Animate one move, then commit its resulting logical state. */
   function nextMove() {
     if (animatingRef.current || viewRotating || phase !== 'solved' || moveIndex >= solution.length)
       return;

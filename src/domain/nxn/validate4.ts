@@ -60,12 +60,14 @@ for (const face of FACES)
     }
 const corners = [...groups.values()].filter((group) => group.length === 3);
 const wings = [...groups.values()].filter((group) => group.length === 2);
+// Describe a piece by its colors, independent of sticker order.
 const signature = (state: CubeState, group: FaceletAddress[]) =>
   group
     .map(({ face, row, column }) => state[face][row * 4 + column])
     .sort()
     .join(',');
 const solved = createNxNCube(4, true);
+/** Collect sorted color combinations for a group of pieces. */
 function signatures(state: CubeState, pieces: FaceletAddress[][]): string[] {
   return pieces.map((piece) => signature(state, piece)).sort();
 }

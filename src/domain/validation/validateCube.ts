@@ -112,6 +112,7 @@ const EDGES: readonly (readonly Sticker[])[] = [
   ],
 ];
 
+/** Count inversions modulo two to determine permutation parity. */
 function permutationParity(permutation: readonly number[]): number {
   let inversions = 0;
   for (let i = 0; i < permutation.length; i++)
@@ -120,6 +121,7 @@ function permutationParity(permutation: readonly number[]): number {
   return inversions % 2;
 }
 
+/** Check completeness, color scheme, piece identities, orientations, and parity. */
 export function validateCube(input: CubeState): ValidationResult {
   let state = input;
   if (
@@ -139,6 +141,7 @@ export function validateCube(input: CubeState): ValidationResult {
   if (!mapping) return { valid: false, reason: 'centers' };
   state = normalizeColors(state, mapping);
 
+  // Identify each piece and accumulate its twist in the normalized color scheme.
   const cornerPermutation: number[] = [];
   let cornerOrientation = 0;
   for (const position of CORNERS) {
@@ -154,6 +157,7 @@ export function validateCube(input: CubeState): ValidationResult {
     cornerOrientation += orientation;
   }
 
+  // Edges must also be unique, with an even number of flips.
   const edgePermutation: number[] = [];
   let edgeOrientation = 0;
   for (const position of EDGES) {

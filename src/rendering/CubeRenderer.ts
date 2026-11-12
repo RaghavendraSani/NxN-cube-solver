@@ -15,6 +15,7 @@ import { createCubeScene } from './cubeScene';
 import { pickFacelet } from './pickFacelet';
 import type { LayerMove } from '../domain/nxn/cube';
 
+/** Own the canvas, camera, pointer handling, and animation lifecycle. */
 export class CubeRenderer {
   private readonly renderer = new WebGLRenderer({ antialias: true });
   private readonly scene = new Scene();
@@ -24,6 +25,7 @@ export class CubeRenderer {
   private readonly observer: ResizeObserver;
   private frame: number | null = null;
 
+  /** Create the scene and attach its canvas, input handler, and resize observer. */
   constructor(
     private readonly container: HTMLElement,
     private readonly onSelect: (address: FaceletAddress) => void,
@@ -43,6 +45,7 @@ export class CubeRenderer {
     this.resize();
   }
 
+  /** Keep the camera and canvas aligned with the container. */
   private resize() {
     const { clientWidth: width, clientHeight: height } = this.container;
     if (!width || !height) return;
@@ -52,6 +55,7 @@ export class CubeRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** Convert a pointer position into a selected facelet. */
   private readonly handlePointer = (event: PointerEvent) => {
     if (this.frame !== null) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -64,16 +68,19 @@ export class CubeRenderer {
     if (address) this.onSelect(address);
   };
 
+  /** Paint the scene from the current logical cube state. */
   setState(state: CubeState) {
     this.cube.setState(state);
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** Highlight the layer described by the next move. */
   setHighlight(face: Face | null, layer = 0, width = 1) {
     this.cube.setHighlight(face, layer, width);
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** Animate a whole-cube view rotation without changing puzzle state. */
   rotate(axis: 'x' | 'y', direction: 1 | -1, onComplete: () => void): boolean {
     if (this.frame !== null) return false;
     const start = this.cube.group.quaternion.clone();
@@ -97,6 +104,7 @@ export class CubeRenderer {
     return true;
   }
 
+  /** Animate one layer turn and display its supplied final state on completion. */
   animateMove(
     move: Move | LayerMove,
     duration: number,
@@ -124,6 +132,7 @@ export class CubeRenderer {
     return true;
   }
 
+  /** Release animation, event, canvas, and WebGL resources. */
   dispose() {
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.observer.disconnect();

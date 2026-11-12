@@ -38,10 +38,24 @@ export const FACE_BASIS: Record<Face, readonly [Vector, Vector, Vector]> = {
   ],
 };
 
+/** Return the dot product of two vectors. */
 export function dot(a: Vector, b: Vector): number {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
+/** Rotate a vector clockwise by 90 degrees around an outward face normal. */
+export function rotateClockwise(vector: Vector, axis: Vector): Vector {
+  const [x, y, z] = vector;
+  const [a, b, c] = axis;
+  const projection = dot(vector, axis);
+  return [
+    a * projection - (b * z - c * y),
+    b * projection - (c * x - a * z),
+    c * projection - (a * y - b * x),
+  ];
+}
+
+/** Convert a 3×3 facelet address into a position and outward normal. */
 export function faceletToCoordinates({ face, row, column }: FaceletAddress): FaceletCoordinates {
   if (
     !Number.isInteger(row) ||
@@ -62,6 +76,7 @@ export function faceletToCoordinates({ face, row, column }: FaceletAddress): Fac
   };
 }
 
+/** Convert a 3×3 surface position and normal into a facelet address. */
 export function coordinatesToFacelet({ position, normal }: FaceletCoordinates): FaceletAddress {
   const face = (Object.keys(FACE_BASIS) as Face[]).find(
     (candidate) => dot(FACE_BASIS[candidate][0], normal) === 1,

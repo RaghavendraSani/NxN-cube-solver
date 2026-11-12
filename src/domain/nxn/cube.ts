@@ -1,6 +1,7 @@
 import {
   dot,
   FACE_BASIS,
+  rotateClockwise,
   type FaceletAddress,
   type FaceletCoordinates,
   type Vector,
@@ -11,6 +12,7 @@ import type { CubeState } from '../cube/types';
 
 export type LayerMove = Readonly<{ face: Face; layer: number; width: number; turns: 1 | -1 | 2 }>;
 
+/** Check that every face has one distinct assigned color. */
 export function isNxNSolved(state: CubeState, size: number): boolean {
   checkSize(size);
   const colors = FACES.map((face) => state[face][0]);
@@ -25,11 +27,13 @@ export function isNxNSolved(state: CubeState, size: number): boolean {
   );
 }
 
+/** Reject sizes outside the domain's supported coordinate range. */
 function checkSize(size: number) {
   if (!Number.isInteger(size) || size < 3 || size > 20)
     throw new RangeError('Cube size must be an integer from 3 to 20.');
 }
 
+/** Create independent faces, either unassigned or in the standard solved scheme. */
 export function createNxNCube(size: number, solved = false): CubeState {
   checkSize(size);
   const colors: Record<Face, Color> = {
@@ -48,7 +52,8 @@ export function createNxNCube(size: number, solved = false): CubeState {
   ) as unknown as CubeState;
 }
 
-// Doubled coordinates avoid fractions for even sizes: the surface lies at ±(size - 1).
+/** Convert an address to doubled coordinates, avoiding fractions for even sizes. */
+// The cube surface lies at ±(size - 1).
 export function toNxNCoordinates(
   { face, row, column }: FaceletAddress,
   size: number,
@@ -71,6 +76,7 @@ export function toNxNCoordinates(
   return { position, normal };
 }
 
+/** Convert a surface position and normal back to a facelet address. */
 export function fromNxNCoordinates(
   { position, normal }: FaceletCoordinates,
   size: number,
@@ -97,17 +103,7 @@ export function fromNxNCoordinates(
   return { face, row, column };
 }
 
-function rotateClockwise(v: Vector, axis: Vector): Vector {
-  const [x, y, z] = v;
-  const [a, b, c] = axis;
-  const projection = dot(v, axis);
-  return [
-    a * projection - (b * z - c * y),
-    b * projection - (c * x - a * z),
-    c * projection - (a * y - b * x),
-  ];
-}
-
+/** Return a new cube with the requested layers turned. */
 export function applyNxNMove(state: CubeState, size: number, move: LayerMove): CubeState {
   checkSize(size);
   if (

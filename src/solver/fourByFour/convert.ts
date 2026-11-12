@@ -29,6 +29,7 @@ const identity: Record<Exclude<Color, 'unassigned'>, Face> = {
   blue: 'B',
 };
 
+/** Translate validated facelets into the vendored solver's piece representation. */
 export function convertFourState(cube: CubeState, layout: FourSolverLayout): FourPieceState {
   if (check4Entry(cube).status !== 'counts-ok')
     throw new Error('4x4 entry failed preliminary checks.');
@@ -44,6 +45,7 @@ export function convertFourState(cube: CubeState, layout: FourSolverLayout): Fou
     layout.wings.some((slot) => slot.length !== 2)
   )
     throw new Error('Invalid solver layout.');
+  // Ensure the supplied layout covers each sticker exactly once before indexing it.
   const addresses = layout.facelets.map((address) => {
     toNxNCoordinates(address, 4);
     return `${address.face}:${address.row}:${address.column}`;
@@ -65,6 +67,7 @@ export function convertFourState(cube: CubeState, layout: FourSolverLayout): Fou
   const cornerPermutation: number[] = [],
     cornerOrientation: number[] = [],
     wingPermutation: number[] = [];
+  // Match each occupied slot to its home piece and orientation.
   for (const slot of layout.corners) {
     const matches: { piece: number; twist: number }[] = [];
     layout.corners.forEach((piece, pieceIndex) => {

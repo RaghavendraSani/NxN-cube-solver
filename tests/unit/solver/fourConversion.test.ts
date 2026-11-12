@@ -86,10 +86,12 @@ describe('4x4 solver conversion', () => {
   });
   it('round-trips 200 independently assembled piece states including arbitrary center arrangements', () => {
     let seed = 96173;
+    /** Generate a repeatable index so failures can be reproduced. */
     function random(n: number) {
       seed = (seed * 1664525 + 1013904223) >>> 0;
       return Math.floor((seed / 0x100000000) * n);
     }
+    /** Shuffle a copy without changing the solved-state fixture. */
     function shuffled(values: readonly number[]) {
       const result = [...values];
       for (let i = result.length - 1; i > 0; i--) {

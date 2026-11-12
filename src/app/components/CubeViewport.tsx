@@ -23,6 +23,7 @@ type Props = {
   size?: number;
 };
 
+/** Connect React controls to the Three.js renderer and its lifecycle. */
 export function CubeViewport({
   state,
   onSelect,
@@ -50,6 +51,7 @@ export function CubeViewport({
     [],
   );
 
+  // Recreate the renderer when the cube size changes and release its resources on unmount.
   useEffect(() => {
     if (!container.current) return;
     try {
@@ -74,6 +76,7 @@ export function CubeViewport({
     renderer.current?.setHighlight(highlight?.face ?? null, highlight?.layer, highlight?.width);
   }, [highlight]);
 
+  /** Rotate only the displayed view, leaving the puzzle state unchanged. */
   function rotate(axis: 'x' | 'y', direction: 1 | -1) {
     if (
       renderer.current?.rotate(axis, direction, () => {

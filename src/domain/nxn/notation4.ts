@@ -14,6 +14,7 @@ export function formatMove4(move: LayerMove): string {
   return `${prefix}${move.face}${wide}${move.turns === -1 ? "'" : move.turns === 2 ? '2' : ''}`;
 }
 
+/** Parse the supported outer, inner-slice, and wide 4×4 moves. */
 export function parseMove4(text: string): LayerMove {
   const match = /^(2)?([URFDLB])(w)?(['2])?$/.exec(text);
   if (!match || (match[1] && match[3])) throw new RangeError('Invalid 4x4 notation.');

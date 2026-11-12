@@ -13,6 +13,7 @@ export function createSolvedCube(): CubeState {
   };
 }
 
+/** Create independent, unpainted faces for a new 3×3 entry. */
 export function createUnassignedCube(): CubeState {
   return {
     U: Array<Color>(9).fill('unassigned'),

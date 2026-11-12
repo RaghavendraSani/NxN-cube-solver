@@ -26,6 +26,7 @@ export function centerMapping(state: CubeState): Map<Color, Face> | null {
   return new Map(FACES.map((face) => [state[face][4], face]));
 }
 
+/** Express a properly oriented color scheme in the standard validation scheme. */
 export function normalizeColors(state: CubeState, mapping: Map<Color, Face>): CubeState {
   const solved = createSolvedCube();
   const convert = (face: Face) => state[face].map((color) => solved[mapping.get(color)!][4]);

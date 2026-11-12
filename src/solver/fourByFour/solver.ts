@@ -1,6 +1,10 @@
-import { FACES } from '../../domain/cube/faces';
 import type { CubeState } from '../../domain/cube/types';
-import { applyNxNMove, fromNxNCoordinates, type LayerMove } from '../../domain/nxn/cube';
+import {
+  applyNxNMove,
+  fromNxNCoordinates,
+  isNxNSolved,
+  type LayerMove,
+} from '../../domain/nxn/cube';
 import { check4Entry } from '../../domain/nxn/validate4';
 import { FACES as solverFaces } from '../../../vendor/cubesmith/src/notation/move';
 import { pieces444 } from '../../../vendor/cubesmith/src/puzzles/444/pieces';
@@ -8,25 +12,19 @@ import { move444Tables } from '../../../vendor/cubesmith/src/puzzles/444/state';
 import { solve444 } from '../../../vendor/cubesmith/src/puzzles/444/solve';
 import { convertFourState, type FourSolverLayout } from './convert';
 
-function isFourSolved(state: CubeState): boolean {
-  const colors = FACES.map((face) => state[face][0]);
-  return (
-    new Set(colors).size === 6 &&
-    !colors.includes('unassigned') &&
-    FACES.every(
-      (face) => state[face].length === 16 && state[face].every((color) => color === state[face][0]),
-    )
-  );
-}
-
+/** Replay a 4×4 solution and reject malformed moves or an unsolved result. */
 export function verifyFourSolution(state: CubeState, moves: readonly LayerMove[]): boolean {
   try {
-    return isFourSolved(moves.reduce((current, move) => applyNxNMove(current, 4, move), state));
+    return isNxNSolved(
+      moves.reduce((current, move) => applyNxNMove(current, 4, move), state),
+      4,
+    );
   } catch {
     return false;
   }
 }
 
+/** Translate the vendored solver's facelet positions to our cube coordinates. */
 function solverLayout(): FourSolverLayout {
   const { facelets, cornerFacelets, wingFacelets, centreFacelets } = pieces444();
   return {
@@ -49,7 +47,7 @@ function solverLayout(): FourSolverLayout {
 /** Internal adapter only. Call from a worker; input validation is preliminary. */
 export function solveFour(state: CubeState): LayerMove[] {
   if (check4Entry(state).status !== 'counts-ok') throw new Error('Invalid 4x4 entry.');
-  if (isFourSolved(state)) return [];
+  if (isNxNSolved(state, 4)) return [];
   const pieceState = convertFourState(state, solverLayout());
   const tables = move444Tables();
   const moves: LayerMove[] = solve444(pieceState).map((index) => {

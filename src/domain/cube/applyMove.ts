@@ -1,20 +1,9 @@
-import { coordinatesToFacelet, dot, faceletToCoordinates, type Vector } from './coordinates';
+import { coordinatesToFacelet, dot, faceletToCoordinates, rotateClockwise } from './coordinates';
 import { FACES } from './faces';
 import type { Move } from './moves';
 import type { CubeState } from './types';
 
-// A clockwise quarter-turn viewed along the outward normal is -90 degrees.
-function rotateClockwise(v: Vector, axis: Vector): Vector {
-  const [x, y, z] = v;
-  const [a, b, c] = axis;
-  const projection = dot(v, axis);
-  return [
-    a * projection - (b * z - c * y),
-    b * projection - (c * x - a * z),
-    c * projection - (a * y - b * x),
-  ];
-}
-
+/** Apply one 3×3 face turn without modifying the input state. */
 export function applyMove(state: CubeState, move: Move): CubeState {
   const next = {
     U: [...state.U],

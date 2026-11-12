@@ -7,6 +7,7 @@ import type { Color } from '../../../../src/domain/cube/colors';
 import type { CubeState } from '../../../../src/domain/cube/types';
 import { validateCube } from '../../../../src/domain/validation/validateCube';
 
+/** Swap two stickers in a copy to construct an invalid test state. */
 function swap(state: CubeState, a: [Face, number], b: [Face, number]): CubeState {
   const copy = Object.fromEntries(FACES.map((face) => [face, [...state[face]]])) as Record<
     Face,

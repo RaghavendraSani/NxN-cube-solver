@@ -14,6 +14,7 @@ test('enters and plays a verified 4x4 solution', async ({ page }) => {
   const orientation = new Quaternion();
   const painted = new Set<string>();
   const canvas = page.locator('canvas');
+  // Paint each visible facelet once while rotating through all faces.
   for (const rotation of [
     null,
     'Rotate right',
