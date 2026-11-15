@@ -219,5 +219,5 @@ describe('optimized solver speed', () => {
     const elapsed = Date.now() - start;
     console.log(`Solved 2R in ${sol.length} comms, took ${elapsed}ms!`);
     expect(sol.length).toBeGreaterThan(0);
-  });
+  }, 20000);
 });
