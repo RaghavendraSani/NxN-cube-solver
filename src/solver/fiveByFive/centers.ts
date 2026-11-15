@@ -10,10 +10,7 @@
 import { FACES, type Face } from '../../domain/cube/faces';
 import { FACE_BASIS, rotateClockwise } from '../../domain/cube/coordinates';
 import type { CubeState } from '../../domain/cube/types';
-import {
-  applyNxNMove,
-  type LayerMove,
-} from '../../domain/nxn/cube';
+import { applyNxNMove, type LayerMove } from '../../domain/nxn/cube';
 import { check5Entry } from '../../domain/fiveByFive/validate';
 import { parseMove5 } from '../../domain/fiveByFive/notation';
 
@@ -80,11 +77,15 @@ interface CommEntry {
   affected: number[];
 }
 
-function computePermutation(addresses: { face: Face; index: number }[], moves: LayerMove[]): number[] {
+function computePermutation(
+  addresses: { face: Face; index: number }[],
+  moves: LayerMove[],
+): number[] {
   // Build a numeric cube representation for permutation tracking.
-  const numericCube = Object.fromEntries(
-    FACES.map((f) => [f, Array(25).fill(0)]),
-  ) as Record<Face, number[]>;
+  const numericCube = Object.fromEntries(FACES.map((f) => [f, Array(25).fill(0)])) as Record<
+    Face,
+    number[]
+  >;
 
   // Initialise each addressed sticker with a unique identifier.
   addresses.forEach(({ face, index }, i) => {
@@ -222,11 +223,7 @@ function countMisplaced(state: readonly number[], target: readonly number[]): nu
   return count;
 }
 
-function solveOrbit(
-  initialState: number[],
-  target: number[],
-  library: CommEntry[],
-): LayerMove[] {
+function solveOrbit(initialState: number[], target: number[], library: CommEntry[]): LayerMove[] {
   let current = [...initialState];
   const moves: LayerMove[] = [];
   const visited = new Set<string>();
@@ -347,10 +344,7 @@ export function areFiveCentersSolved(state: CubeState): boolean {
  * Deterministic center solver. Solves all X-centers and T-centers.
  * Guaranteed to find a solution for any legal scramble.
  */
-export function findFiveCenterMoves(
-  state: CubeState,
-  maxDepth?: number,
-): LayerMove[] | null {
+export function findFiveCenterMoves(state: CubeState, maxDepth?: number): LayerMove[] | null {
   if (check5Entry(state).status !== 'checks-ok') throw new Error('Invalid 5x5 entry.');
 
   if (areFiveCentersSolved(state)) return [];

@@ -8,10 +8,27 @@ import { pieces5 } from '../../../../src/domain/fiveByFive/pieces';
 const pieces = pieces5();
 
 const MOVES = [
-  'U', 'D', 'R', 'L', 'F', 'B',
-  '2U', '2D', '2R', '2L', '2F', '2B',
-  'Rw', 'Lw', 'Fw', 'Bw', 'Uw', 'Dw',
-].flatMap((f) => [`${f}`, `${f}'`, `${f}2`]).map(parseMove5);
+  'U',
+  'D',
+  'R',
+  'L',
+  'F',
+  'B',
+  '2U',
+  '2D',
+  '2R',
+  '2L',
+  '2F',
+  '2B',
+  'Rw',
+  'Lw',
+  'Fw',
+  'Bw',
+  'Uw',
+  'Dw',
+]
+  .flatMap((f) => [`${f}`, `${f}'`, `${f}2`])
+  .map(parseMove5);
 
 function randomScramble(cube: CubeState, movesCount = 30): CubeState {
   let c = cube;
@@ -72,7 +89,8 @@ describe('comprehensive 5×5 validation invariants', () => {
       const m2 = pieces.middleEdges[1];
       for (let j = 0; j < 2; j++) {
         const temp = cube4[m1[j].face][m1[j].row * 5 + m1[j].column];
-        cube4[m1[j].face][m1[j].row * 5 + m1[j].column] = cube4[m2[j].face][m2[j].row * 5 + m2[j].column];
+        cube4[m1[j].face][m1[j].row * 5 + m1[j].column] =
+          cube4[m2[j].face][m2[j].row * 5 + m2[j].column];
         cube4[m2[j].face][m2[j].row * 5 + m2[j].column] = temp;
       }
       expect(check5Entry(cube4).status).not.toBe('checks-ok');
@@ -84,16 +102,22 @@ describe('comprehensive 5×5 validation invariants', () => {
       // Set to opposite color of the other sticker
       const otherColor = cube5[targetWing[1].face][targetWing[1].row * 5 + targetWing[1].column];
       const opposite: Record<Color, Color> = {
-        white: 'yellow', yellow: 'white',
-        green: 'blue', blue: 'green',
-        red: 'orange', orange: 'red',
+        white: 'yellow',
+        yellow: 'white',
+        green: 'blue',
+        blue: 'green',
+        red: 'orange',
+        orange: 'red',
       };
-      cube5[targetWing[0].face][targetWing[0].row * 5 + targetWing[0].column] = opposite[otherColor];
+      cube5[targetWing[0].face][targetWing[0].row * 5 + targetWing[0].column] =
+        opposite[otherColor];
       expect(check5Entry(cube5).status).not.toBe('checks-ok');
       rejectedCount++;
     }
 
     expect(rejectedCount).toBe(1000);
-    console.log(`Successfully verified rejection of all ${rejectedCount} illegal single-fault states!`);
+    console.log(
+      `Successfully verified rejection of all ${rejectedCount} illegal single-fault states!`,
+    );
   });
 });

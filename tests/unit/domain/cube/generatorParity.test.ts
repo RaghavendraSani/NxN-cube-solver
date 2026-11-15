@@ -11,7 +11,7 @@ describe('wing handedness orbit check', () => {
   it('checks if left wings and right wings ever mix', () => {
     const pieces = pieces5();
 
-    function handedness(wing: typeof pieces.wings[0]) {
+    function handedness(wing: (typeof pieces.wings)[0]) {
       const a = FACE_BASIS[wing[0].face][0];
       const b = FACE_BASIS[wing[1].face][0];
       const cross: Vector = [
@@ -24,8 +24,8 @@ describe('wing handedness orbit check', () => {
     }
 
     const initialHandedness = pieces.wings.map(handedness);
-    console.log('Positive handedness count:', initialHandedness.filter(h => h > 0).length);
-    console.log('Negative handedness count:', initialHandedness.filter(h => h < 0).length);
+    console.log('Positive handedness count:', initialHandedness.filter((h) => h > 0).length);
+    console.log('Negative handedness count:', initialHandedness.filter((h) => h < 0).length);
 
     for (const move of ['U', '2U', '3U', 'R', '2R', 'F', '2F']) {
       const cube: Record<Face, (number | null)[]> = {} as Record<Face, (number | null)[]>;
@@ -33,7 +33,7 @@ describe('wing handedness orbit check', () => {
         cube[face] = Array(25).fill(null);
       }
       pieces.wings.forEach((wing, idx) => {
-        wing.forEach(addr => {
+        wing.forEach((addr) => {
           cube[addr.face][addr.row * 5 + addr.column] = idx;
         });
       });

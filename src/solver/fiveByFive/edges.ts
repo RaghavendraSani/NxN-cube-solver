@@ -72,9 +72,7 @@ const sliceAlgs = [
   `2D2 ${flipAlg} 2D2`,
 ].map(parseMoves);
 
-const orientedSliceAlgs = sliceAlgs.flatMap((alg) =>
-  ORIENTATIONS.map((ori) => remapSeq(alg, ori)),
-);
+const orientedSliceAlgs = sliceAlgs.flatMap((alg) => ORIENTATIONS.map((ori) => remapSeq(alg, ori)));
 
 const baseParity = parseMoves("2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2");
 const parityAlgs: LayerMove[][] = ORIENTATIONS.map((ori) => remapSeq(baseParity, ori));

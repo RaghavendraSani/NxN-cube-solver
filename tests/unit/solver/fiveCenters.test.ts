@@ -30,11 +30,9 @@ describe('5×5 center reduction', () => {
   });
 
   it('solves 5 random 20-move inner slice scrambles', () => {
-    const innerMoves = ['2R', '2L', '2U', '2D', '2F', '2B'].flatMap((f) => [
-      `${f}`,
-      `${f}'`,
-      `${f}2`,
-    ]).map(parseMove5);
+    const innerMoves = ['2R', '2L', '2U', '2D', '2F', '2B']
+      .flatMap((f) => [`${f}`, `${f}'`, `${f}2`])
+      .map(parseMove5);
 
     for (let i = 0; i < 5; i++) {
       let cube = createNxNCube(5, true);

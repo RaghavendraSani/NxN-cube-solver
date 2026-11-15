@@ -169,7 +169,9 @@ describe('optimized solver speed', () => {
           if (current[i] !== target[i]) misplacedIndices.add(i);
         }
 
-        const relevantE1 = library.filter(e => e.affected.some(idx => misplacedIndices.has(idx)));
+        const relevantE1 = library.filter((e) =>
+          e.affected.some((idx) => misplacedIndices.has(idx)),
+        );
 
         let bestE1: CommEntry | null = null;
         let bestE2: CommEntry | null = null;
@@ -211,7 +213,7 @@ describe('optimized solver speed', () => {
     const cube = applyNxNMove(createNxNCube(5, true), 5, parseMove5('2R'));
     const state = T_ADDRESSES.map(({ face, index }) => {
       const color = cube[face][index];
-      return FACES.indexOf(FACES.find(f => cube[f][12] === color)!);
+      return FACES.indexOf(FACES.find((f) => cube[f][12] === color)!);
     });
 
     const start = Date.now();
