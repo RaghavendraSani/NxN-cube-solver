@@ -2,6 +2,7 @@ import { describe, it } from 'vitest';
 import { applyNxNMove } from '../../../../src/domain/nxn/cube';
 import { parseMove5 } from '../../../../src/domain/fiveByFive/notation';
 import { pieces5 } from '../../../../src/domain/fiveByFive/pieces';
+import type { Face } from '../../../../src/domain/cube/faces';
 import { FACES } from '../../../../src/domain/cube/faces';
 import { dot, FACE_BASIS, type Vector } from '../../../../src/domain/cube/coordinates';
 import { toNxNCoordinates } from '../../../../src/domain/nxn/cube';
@@ -9,7 +10,7 @@ import { toNxNCoordinates } from '../../../../src/domain/nxn/cube';
 describe('wing handedness orbit check', () => {
   it('checks if left wings and right wings ever mix', () => {
     const pieces = pieces5();
-    // Compute handedness for each wing
+
     function handedness(wing: typeof pieces.wings[0]) {
       const a = FACE_BASIS[wing[0].face][0];
       const b = FACE_BASIS[wing[1].face][0];
@@ -26,11 +27,11 @@ describe('wing handedness orbit check', () => {
     console.log('Positive handedness count:', initialHandedness.filter(h => h > 0).length);
     console.log('Negative handedness count:', initialHandedness.filter(h => h < 0).length);
 
-    // Apply moves and check if any wing changes handedness
     for (const move of ['U', '2U', '3U', 'R', '2R', 'F', '2F']) {
-      // Map each wing piece
-      const cube: any = {};
-      for (const face of FACES) cube[face] = Array(25).fill(null);
+      const cube: Record<Face, (number | null)[]> = {} as Record<Face, (number | null)[]>;
+      for (const face of FACES) {
+        cube[face] = Array(25).fill(null);
+      }
       pieces.wings.forEach((wing, idx) => {
         wing.forEach(addr => {
           cube[addr.face][addr.row * 5 + addr.column] = idx;

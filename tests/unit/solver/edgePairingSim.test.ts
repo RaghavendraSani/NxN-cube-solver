@@ -3,6 +3,7 @@ import { createNxNCube, applyNxNMove, type LayerMove } from '../../../src/domain
 import { findFiveCenterMoves, areFiveCentersSolved } from '../../../src/solver/fiveByFive/centers';
 import { areFiveEdgesPaired } from '../../../src/domain/fiveByFive/reduce';
 import { parseMove5 } from '../../../src/domain/fiveByFive/notation';
+import type { Face } from '../../../src/domain/cube/faces';
 import { FACES } from '../../../src/domain/cube/faces';
 import { FACE_BASIS, rotateClockwise } from '../../../src/domain/cube/coordinates';
 
@@ -10,8 +11,9 @@ function parseMoves(s: string): LayerMove[] {
   return s.trim().split(/\s+/).filter(Boolean).map(parseMove5);
 }
 
-function buildOrientations(): any[][] {
-  const orientations: any[][] = [[...FACES]];
+function buildOrientations(): Face[][] {
+  const orientations: Face[][] = [[...FACES]];
+
   const seen = new Set([FACES.join('')]);
   for (let i = 0; i < orientations.length; i++) {
     for (const axis of [FACE_BASIS.R[0], FACE_BASIS.U[0]]) {
@@ -33,7 +35,7 @@ function buildOrientations(): any[][] {
 
 const ORIENTATIONS = buildOrientations();
 
-function remapSeq(moves: LayerMove[], orientation: any[]): LayerMove[] {
+function remapSeq(moves: LayerMove[], orientation: Face[]): LayerMove[] {
   return moves.map((m) => ({ ...m, face: orientation[FACES.indexOf(m.face)] }));
 }
 

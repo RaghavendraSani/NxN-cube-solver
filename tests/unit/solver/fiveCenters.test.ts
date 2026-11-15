@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { applyNxNMove, createNxNCube, type LayerMove } from '../../../src/domain/nxn/cube';
+import { applyNxNMove, createNxNCube } from '../../../src/domain/nxn/cube';
 import { areFiveCentersSolved, findFiveCenterMoves } from '../../../src/solver/fiveByFive/centers';
 import { parseMove5 } from '../../../src/domain/fiveByFive/notation';
 

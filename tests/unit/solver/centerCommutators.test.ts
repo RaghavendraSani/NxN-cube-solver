@@ -47,7 +47,7 @@ const T_OFFSETS = [7, 11, 13, 17] as const;
 const T_ADDRESSES = FACES.flatMap((face) => T_OFFSETS.map((index) => ({ face, index })));
 
 function getPermutation(moves: LayerMove[]) {
-  const cube: any = {};
+  const cube = createNxNCube(5, true);
   for (const f of FACES) cube[f] = Array(25).fill(0);
   T_ADDRESSES.forEach(({ face, index }, i) => {
     cube[face][index] = i;

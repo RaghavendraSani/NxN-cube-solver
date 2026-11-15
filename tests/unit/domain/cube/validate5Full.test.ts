@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Color } from '../../../../src/domain/cube/colors';
 import { createNxNCube, applyNxNMove, type CubeState } from '../../../../src/domain/nxn/cube';
 import { parseMove5 } from '../../../../src/domain/fiveByFive/notation';
 import { check5Entry } from '../../../../src/domain/fiveByFive/validate';
@@ -82,7 +83,7 @@ describe('comprehensive 5×5 validation invariants', () => {
       const targetWing = pieces.wings[0];
       // Set to opposite color of the other sticker
       const otherColor = cube5[targetWing[1].face][targetWing[1].row * 5 + targetWing[1].column];
-      const opposite: Record<string, any> = {
+      const opposite: Record<Color, Color> = {
         white: 'yellow', yellow: 'white',
         green: 'blue', blue: 'green',
         red: 'orange', orange: 'red',
