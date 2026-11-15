@@ -350,7 +350,6 @@ export function areFiveCentersSolved(state: CubeState): boolean {
 export function findFiveCenterMoves(
   state: CubeState,
   maxDepth?: number,
-  _maxNodes?: number,
 ): LayerMove[] | null {
   if (check5Entry(state).status !== 'checks-ok') throw new Error('Invalid 5x5 entry.');
 
