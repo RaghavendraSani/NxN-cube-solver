@@ -1,11 +1,11 @@
 import { cubeFromFaces, faceOf, parseFaceletString, solve, turnsOf } from '@turnwise/cube-solver';
-import { applyMove } from '../domain/cube/applyMove';
-import { FACES } from '../domain/cube/faces';
-import { isSolved } from '../domain/cube/isSolved';
-import type { Move } from '../domain/cube/moves';
-import { centerMapping } from '../domain/cube/centerMapping';
-import type { CubeState } from '../domain/cube/types';
-import { validateCube } from '../domain/validation/validateCube';
+import { applyMove } from '../../domain/cube/applyMove';
+import { FACES } from '../../domain/cube/faces';
+import { isSolved } from '../../domain/cube/isSolved';
+import type { Move } from '../../domain/cube/moves';
+import { centerMapping } from '../../domain/cube/centerMapping';
+import type { CubeState } from '../../domain/cube/types';
+import { validateCube } from '../../domain/threeByThree/validate';
 
 /** Map the entered colors to the solver's face-letter representation. */
 export function toFaceletString(state: CubeState): string {

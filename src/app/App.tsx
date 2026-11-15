@@ -8,21 +8,58 @@ import {
 } from '../domain/cube/inputState';
 import type { FaceletAddress } from '../domain/cube/coordinates';
 import { CubeViewport, type CubeViewportHandle } from './components/CubeViewport';
-import { validateCube } from '../domain/validation/validateCube';
-import { runFourSolverWorker, runSolverWorker } from '../solver/workerClient';
+import { validateCube } from '../domain/threeByThree/validate';
+import { runFiveSolverWorker, runFourSolverWorker, runSolverWorker } from '../solver/workerClient';
 import { applyNxNMove, createNxNCube, isNxNSolved, type LayerMove } from '../domain/nxn/cube';
-import { check4Entry } from '../domain/nxn/validate4';
-import { formatMove4 } from '../domain/nxn/notation4';
+import { check4Entry } from '../domain/fourByFour/validate';
+import { formatMove4 } from '../domain/fourByFour/notation';
+import { check5Entry } from '../domain/fiveByFive/validate';
+import { formatMove5 } from '../domain/fiveByFive/notation';
 import type { Color } from '../domain/cube/colors';
 import type { Move } from '../domain/cube/moves';
+import type { CubeState } from '../domain/cube/types';
 
 const FACE_NAMES = { U: 'top', R: 'right', F: 'front', D: 'bottom', L: 'left', B: 'back' } as const;
+
+/** Return the existing 3×3 validation guidance, or null for a valid cube. */
+function validateThreeByThree(state: CubeState): string | null {
+  const result = validateCube(state);
+  if (result.valid) return null;
+  const messages: Record<typeof result.reason, string> = {
+    incomplete: 'Some squares have not been assigned. Click every dotted square.',
+    'color-count': 'Each color must appear exactly nine times.',
+    centers: 'The center colors do not match the supported cube color scheme.',
+    'corner-piece':
+      'A corner has an invalid or duplicated color combination. Check the entered squares.',
+    'edge-piece':
+      'An edge has an invalid or duplicated color combination. Check the entered squares.',
+    'corner-orientation': 'The corner orientations are impossible. Check the entered squares.',
+    'edge-orientation': 'The edge orientations are impossible. Check the entered squares.',
+    parity: 'The piece arrangement is impossible. Check the entered squares.',
+  };
+  return messages[result.reason];
+}
+
+/** Return the existing 4×4 guidance when preliminary entry checks fail. */
+function validateFourByFour(status: ReturnType<typeof check4Entry>['status']): string | null {
+  return status === 'counts-ok'
+    ? null
+    : 'The 4×4 entry has missing or invalid pieces. Check the message above.';
+}
+
+/** Explain why a 5×5 entry cannot be sent to the solver. */
+function validateFiveByFive(status: ReturnType<typeof check5Entry>['status']): string | null {
+  if (status === 'checks-ok') return null;
+  if (status === 'incomplete') return 'Assign every square before solving.';
+  if (status === 'color-count') return 'Each color must appear exactly 25 times.';
+  return `The 5×5 entry has invalid ${status.replaceAll('-', ' ')}. Check the painted squares.`;
+}
 
 /** Coordinate cube entry, worker solving, and one-move-at-a-time playback. */
 export function App() {
   // Puzzle state and display animation state remain separate throughout the session.
   const [cube, setCube] = useState(createUnassignedCube);
-  const [size, setSize] = useState<3 | 4>(3);
+  const [size, setSize] = useState<3 | 4 | 5>(3);
   const [selectedColor, setSelectedColor] = useState<PaletteColor>('red');
   const [phase, setPhase] = useState<'editing' | 'invalid' | 'solving' | 'solved' | 'error'>(
     'editing',
@@ -50,7 +87,8 @@ export function App() {
     [],
   );
   const counts = countColors(cube);
-  const entryCheck = size === 4 ? check4Entry(cube).status : null;
+  const fourEntryCheck = size === 4 ? check4Entry(cube).status : null;
+  const fiveEntryCheck = size === 5 ? check5Entry(cube).status : null;
   /** Paint one selected facelet while editing is available. */
   function paint(address: FaceletAddress) {
     if (workerRef.current || phase === 'solved') return;
@@ -60,35 +98,30 @@ export function App() {
   /** Validate the entry and request a verified solution from the worker. */
   function startSolve() {
     if (workerRef.current || phase === 'solved' || viewRotating) return;
-    const result = size === 3 ? validateCube(cube) : null;
-    if (result && !result.valid) {
-      const messages: Record<typeof result.reason, string> = {
-        incomplete: 'Some squares have not been assigned. Click every dotted square.',
-        'color-count': 'Each color must appear exactly nine times.',
-        centers: 'The center colors do not match the supported cube color scheme.',
-        'corner-piece':
-          'A corner has an invalid or duplicated color combination. Check the entered squares.',
-        'edge-piece':
-          'An edge has an invalid or duplicated color combination. Check the entered squares.',
-        'corner-orientation': 'The corner orientations are impossible. Check the entered squares.',
-        'edge-orientation': 'The edge orientations are impossible. Check the entered squares.',
-        parity: 'The piece arrangement is impossible. Check the entered squares.',
-      };
-      setValidationMessage(messages[result.reason]);
-      setPhase('invalid');
-      return;
-    }
-    if (size === 4 && entryCheck !== 'counts-ok') {
-      setValidationMessage('The 4×4 entry has missing or invalid pieces. Check the message above.');
+    const message =
+      size === 3
+        ? validateThreeByThree(cube)
+        : size === 4
+          ? validateFourByFour(fourEntryCheck!)
+          : validateFiveByFive(fiveEntryCheck!);
+    if (message) {
+      setValidationMessage(message);
       setPhase('invalid');
       return;
     }
     try {
       const createWorker = () =>
         new Worker(new URL('../workers/solver.worker.ts', import.meta.url), { type: 'module' });
-      const request =
-        size === 3 ? runSolverWorker(cube, createWorker) : runFourSolverWorker(cube, createWorker);
-      if (size === 4) setReference({ U: [...cube.U], F: [...cube.F] });
+      let request;
+      if (size === 3) {
+        request = runSolverWorker(cube, createWorker);
+      } else if (size === 4) {
+        request = runFourSolverWorker(cube, createWorker);
+        setReference({ U: [...cube.U], F: [...cube.F] });
+      } else {
+        request = runFiveSolverWorker(cube, createWorker);
+        setReference({ U: [...cube.U], F: [...cube.F] });
+      }
       workerRef.current = request;
       setPhase('solving');
       request.promise
@@ -158,7 +191,7 @@ export function App() {
             value={size}
             disabled={phase === 'solving' || phase === 'solved' || viewRotating}
             onChange={(event) => {
-              const next = Number(event.target.value) === 4 ? 4 : 3;
+              const next = Number(event.target.value) as 3 | 4 | 5;
               setSize(next);
               setCube(createNxNCube(next));
               setSession((current) => current + 1);
@@ -167,9 +200,10 @@ export function App() {
           >
             <option value={3}>3×3</option>
             <option value={4}>4×4</option>
+            <option value={5}>5×5</option>
           </select>
         </label>
-        {size === 4 && <p>Changing size clears the current entry.</p>}
+        {size !== 3 && <p>Changing size clears the current entry.</p>}
         <p className="welcome-copy">
           Choose a color, then click a square. Rotate the cube to reach each face.
         </p>
@@ -202,19 +236,22 @@ export function App() {
           size={size}
         />
         <p role="status">{counts.unassigned} squares remaining to assign.</p>
-        {entryCheck === 'color-count' && <p>Each color must appear exactly 16 times.</p>}
-        {entryCheck === 'corner-piece' && (
+        {fourEntryCheck === 'color-count' && <p>Each color must appear exactly 16 times.</p>}
+        {fourEntryCheck === 'corner-piece' && (
           <p>Corner color combinations are invalid or duplicated.</p>
         )}
-        {entryCheck === 'corner-orientation' && <p>Corner orientations are impossible.</p>}
-        {entryCheck === 'wing-piece' && (
+        {fourEntryCheck === 'corner-orientation' && <p>Corner orientations are impossible.</p>}
+        {fourEntryCheck === 'wing-piece' && (
           <p>Edge piece color combinations are invalid or duplicated.</p>
         )}
-        {entryCheck === 'counts-ok' && (
+        {fourEntryCheck === 'counts-ok' && (
           <p>
             Color counts and piece combinations pass preliminary checks. Physical solvability has
             not been checked.
           </p>
+        )}
+        {fiveEntryCheck && fiveEntryCheck !== 'incomplete' && fiveEntryCheck !== 'checks-ok' && (
+          <p>{validateFiveByFive(fiveEntryCheck)}</p>
         )}
         {phase !== 'solved' && (
           <button type="button" disabled={phase === 'solving' || viewRotating} onClick={startSolve}>
@@ -245,9 +282,9 @@ export function App() {
                   {(['U', 'F'] as const).map((face) => (
                     <div key={face}>
                       <strong>{face === 'U' ? 'Original top (U)' : 'Original front (F)'}</strong>
-                      {Array.from({ length: 4 }, (_, row) => (
+                      {Array.from({ length: size }, (_, row) => (
                         <div key={row}>
-                          {reference[face].slice(row * 4, row * 4 + 4).join(' · ')}
+                          {reference[face].slice(row * size, row * size + size).join(' · ')}
                         </div>
                       ))}
                     </div>
@@ -263,7 +300,7 @@ export function App() {
                     className={index === moveIndex ? 'current-move' : undefined}
                     aria-current={index === moveIndex ? 'step' : undefined}
                   >
-                    {formatMove4(move)}{' '}
+                    {size === 5 ? formatMove5(move) : formatMove4(move)}{' '}
                   </span>
                 ))}
               </p>
@@ -272,14 +309,16 @@ export function App() {
               <>
                 <p>
                   Move {moveIndex + 1} of {solution.length}:{' '}
-                  <strong>{formatMove4(currentMove)}</strong>
+                  <strong>
+                    {size === 5 ? formatMove5(currentMove) : formatMove4(currentMove)}
+                  </strong>
                 </p>
                 <p>
                   <span aria-hidden="true">{currentMove.turns === -1 ? '↶' : '↷'}</span> Turn the{' '}
-                  {currentMove.width === 2
-                    ? 'outer two layers of the'
-                    : currentMove.layer === 1
-                      ? 'inner layer next to the'
+                  {currentMove.width > 1
+                    ? `outer ${currentMove.width} layers of the`
+                    : currentMove.layer > 0
+                      ? `layer ${currentMove.layer + 1} from the`
                       : 'outer layer of the'}{' '}
                   {FACE_NAMES[currentMove.face]} face ({currentMove.face}){' '}
                   {currentMove.turns === 2

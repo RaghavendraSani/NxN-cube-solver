@@ -3,7 +3,7 @@ import type { Color } from '../../domain/cube/colors';
 import type { FaceletAddress } from '../../domain/cube/coordinates';
 import type { CubeState } from '../../domain/cube/types';
 import { toNxNCoordinates } from '../../domain/nxn/cube';
-import { check4Entry } from '../../domain/nxn/validate4';
+import { check4Entry } from '../../domain/fourByFour/validate';
 
 /** Layout must be supplied by the pinned solver adapter; indices are solver-specific. */
 export type FourSolverLayout = Readonly<{

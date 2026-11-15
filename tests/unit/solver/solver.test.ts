@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { applyMove } from '../../../src/domain/cube/applyMove';
 import { createSolvedCube, createUnassignedCube } from '../../../src/domain/cube/state';
 import { FACES } from '../../../src/domain/cube/faces';
-import { solveCube, toFaceletString, verifySolution } from '../../../src/solver/solveCube';
+import {
+  solveCube,
+  toFaceletString,
+  verifySolution,
+} from '../../../src/solver/threeByThree/solver';
 import type { Color } from '../../../src/domain/cube/colors';
 import type { CubeState } from '../../../src/domain/cube/types';
 import type { Face } from '../../../src/domain/cube/faces';

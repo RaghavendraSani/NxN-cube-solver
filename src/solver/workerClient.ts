@@ -1,5 +1,5 @@
 import type { CubeState } from '../domain/cube/types';
-import type { FourSolveResponse, SolveRequest, SolveResponse } from './protocol';
+import type { FiveSolveResponse, FourSolveResponse, SolveRequest, SolveResponse } from './protocol';
 
 /** The timeout is a failure safeguard, not a user-facing cancellation control. */
 export function runSolverWorker(state: CubeState, createWorker: () => Worker, timeoutMs = 120_000) {
@@ -13,6 +13,15 @@ export function runFourSolverWorker(
   timeoutMs = 120_000,
 ) {
   return runWorker<FourSolveResponse>({ size: 4, state }, createWorker, timeoutMs);
+}
+
+/** Run a bounded 5×5 preview solve using the existing worker lifecycle. */
+export function runFiveSolverWorker(
+  state: CubeState,
+  createWorker: () => Worker,
+  timeoutMs = 120_000,
+) {
+  return runWorker<FiveSolveResponse>({ size: 5, state }, createWorker, timeoutMs);
 }
 
 /** Settle a worker request once and release it on success, failure, or timeout. */

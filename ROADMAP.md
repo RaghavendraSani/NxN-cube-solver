@@ -2,7 +2,7 @@
 
 **Status:** M8, M9, and M10 approved with recorded limitations
 
-**Current phase:** Awaiting owner request for M11
+**Current phase:** M11 in progress
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -32,7 +32,7 @@ Recommended status values:
 | M8 | End-to-end hardening and MVP release | Approved with exceptions | M7 |
 | M9 | NxN domain and notation extension for 4×4 | Complete and approved | M8 |
 | M10 | 4×4 solving, parity, and playback | Complete and approved | M9 |
-| M11 | 5×5 and generalized reduction foundations | Not started | M10 |
+| M11 | 5×5 and generalized reduction foundations | In progress | M10 |
 | M12 | Larger-cube performance and 6×6–20×20 expansion | Not started | M11 |
 
 ---
@@ -677,6 +677,24 @@ M9 and the stable 3×3 solver pipeline from M6–M8.
 ---
 
 ## M11 — 5×5 and generalized reduction foundations
+
+**Status:** In progress. 5×5 remains disabled until its complete acceptance criteria are met.
+
+### Progress
+
+- Added standalone 5×5 notation for outer turns, inner slices, and two- and three-layer wide turns, with round-trip and invalid-input tests. This is not yet connected to solving or playback.
+- Added a guarded reduction handoff that extracts and validates a 3×3 only after 5×5 centers and edge triples are reduced. Center solving and edge pairing are not yet implemented.
+- Added a reduced-state solver that calls the existing 3×3 solver and independently replays its moves on the full 5×5. It is not a general 5×5 solver.
+- Added a 5×5 piece-position map for fixed, X, and T centers, middle edges, wings, and corners, with sticker coverage and center-orbit tests. It is not yet connected to a reduction algorithm.
+- Added preliminary 5×5 entry checks for dimensions, counts, fixed-center scheme, center orbits, piece color combinations, wing handedness, and projected 3×3 corner/middle-edge orientation and parity. These checks do not establish complete 5×5 physical reachability.
+- Added an internal center-only search with precomputed permutations, a misplaced-center lower bound and per-color X- and T-center pattern databases, depth and node limits, and full-domain replay of results. Representative one- through six-turn cases pass; exhaustion returns no result. This is not a general center-reduction algorithm and is not connected to the worker.
+- Extracted an edge-pairing predicate shared by the 5×5 reduction handoff; it recognizes paired triples but does not pair edges itself.
+- Added an internal verifier that replays proposed edge-pairing moves and checks both paired edges and preserved solved centers. A general edge-pairing algorithm remains outstanding.
+- Added a bounded edge-pairing search using one center-restoring sequence and its inverse, rotated through all 24 cube orientations, with outer-turn setups. One necessary test verifies a generated solution by replay; this is not a general edge-pairing algorithm.
+- Connected the bounded center, edge, and reduced-3×3 stages in an internal `solveFive` function with full-cube replay verification. It explicitly fails when a search is exhausted and is not connected to the worker or UI.
+- Evaluated an offline 5×5 solver candidate licensed GPL-3.0-only; it has not been incorporated. The project-owned reduction solver and complete 5×5 validation remain to be implemented.
+- Trialed an MPL-2.0 WebAssembly solver that accepts facelets. Its own Windows Node test and the project's Chromium 5×5 solve flow aborted before returning moves, so the trial integration was removed. The existing bounded M11 solver and disabled 5×5 UI remain in place.
+- Added a development-only `?preview5` path for manually entering a 5×5 state and exercising the existing bounded solver, worker, notation, and playback. A one-inner-turn Chromium entry → solve → playback check passed. The production 5×5 option stays disabled because arbitrary legal scrambles remain unsupported.
 
 ### Objective and expected outcome
 

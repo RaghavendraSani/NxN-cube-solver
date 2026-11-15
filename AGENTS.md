@@ -162,3 +162,12 @@ For multi-step tasks, state a brief plan:
 3. [Step] → verify: [check]
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## Current development progress (2026-11-14)
+
+- Milestone 11 (5×5 Solver & Production Release) is **in progress**.
+- Center reduction engine (`src/solver/fiveByFive/centers.ts`) now implements a deterministic solver for any legal 5×5 scramble and passes all unit tests.
+- Edge‑pairing engine (`src/solver/fiveByFive/edges.ts`) fully implements pairing, includes parity handling, and all related unit tests pass.
+- Validation (`src/domain/fiveByFive/validate.ts`) now includes full reachability checks and extensive random‑scramble tests.
+- UI integration: the 5×5 option is always visible in the dropdown, the preview flag has been removed, and validation messages are displayed correctly.
+- End‑to‑end tests have been updated but are pending execution.

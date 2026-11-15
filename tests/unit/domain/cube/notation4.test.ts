@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatMove4, parseMove4 } from '../../../../src/domain/nxn/notation4';
+import { formatMove4, parseMove4 } from '../../../../src/domain/fourByFour/notation';
 import { FACES } from '../../../../src/domain/cube/faces';
 
 describe('4x4 notation', () => {

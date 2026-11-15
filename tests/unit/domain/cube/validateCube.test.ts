@@ -5,7 +5,7 @@ import { applyMove } from '../../../../src/domain/cube/applyMove';
 import { FACES, type Face } from '../../../../src/domain/cube/faces';
 import type { Color } from '../../../../src/domain/cube/colors';
 import type { CubeState } from '../../../../src/domain/cube/types';
-import { validateCube } from '../../../../src/domain/validation/validateCube';
+import { validateCube } from '../../../../src/domain/threeByThree/validate';
 
 /** Swap two stickers in a copy to construct an invalid test state. */
 function swap(state: CubeState, a: [Face, number], b: [Face, number]): CubeState {

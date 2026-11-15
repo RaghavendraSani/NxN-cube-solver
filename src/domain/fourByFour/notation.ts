@@ -1,5 +1,5 @@
 import { FACES, type Face } from '../cube/faces';
-import type { LayerMove } from './cube';
+import type { LayerMove } from '../nxn/cube';
 
 /** 4x4 notation: R = outer, 2R = inner slice, Rw = outer two layers. */
 export function formatMove4(move: LayerMove): string {

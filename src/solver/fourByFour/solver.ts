@@ -5,7 +5,7 @@ import {
   isNxNSolved,
   type LayerMove,
 } from '../../domain/nxn/cube';
-import { check4Entry } from '../../domain/nxn/validate4';
+import { check4Entry } from '../../domain/fourByFour/validate';
 import { FACES as solverFaces } from '../../../vendor/cubesmith/src/notation/move';
 import { pieces444 } from '../../../vendor/cubesmith/src/puzzles/444/pieces';
 import { move444Tables } from '../../../vendor/cubesmith/src/puzzles/444/state';

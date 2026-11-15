@@ -7,8 +7,8 @@ import { createSolvedCube } from '../../../src/domain/cube/state';
 import type { CubeState } from '../../../src/domain/cube/types';
 import type { Color } from '../../../src/domain/cube/colors';
 import { applyMove } from '../../../src/domain/cube/applyMove';
-import { validateCube } from '../../../src/domain/validation/validateCube';
-import { solveCube, verifySolution } from '../../../src/solver/solveCube';
+import { validateCube } from '../../../src/domain/threeByThree/validate';
+import { solveCube, verifySolution } from '../../../src/solver/threeByThree/solver';
 
 /** Rotate the whole cube to test a different physical orientation. */
 function rotate(state: CubeState, axis: Vector3): CubeState {

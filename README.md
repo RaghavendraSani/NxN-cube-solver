@@ -63,6 +63,8 @@ npm install
 npm run dev
 ```
 
+To manually inspect the unfinished 5×5 workflow, open `http://localhost:5173/?preview5` in the development build and select **5×5 preview**. This option is absent from the production build. The bounded solver can finish short test scrambles but does not support arbitrary legal 5×5 states yet.
+
 Quality checks will be exposed through scripts similar to:
 
 ```powershell

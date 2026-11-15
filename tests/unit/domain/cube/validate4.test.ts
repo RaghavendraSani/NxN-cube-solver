@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { createNxNCube, applyNxNMove, toNxNCoordinates } from '../../../../src/domain/nxn/cube';
-import { check4Entry } from '../../../../src/domain/nxn/validate4';
+import { check4Entry } from '../../../../src/domain/fourByFour/validate';
 import { FACES } from '../../../../src/domain/cube/faces';
 import type { FaceletAddress } from '../../../../src/domain/cube/coordinates';
 import type { Face } from '../../../../src/domain/cube/faces';

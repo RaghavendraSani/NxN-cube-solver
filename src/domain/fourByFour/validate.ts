@@ -1,7 +1,7 @@
 import { FACES } from '../cube/faces';
 import { countColors, PALETTE_COLORS } from '../cube/inputState';
 import type { CubeState } from '../cube/types';
-import { createNxNCube, toNxNCoordinates } from './cube';
+import { createNxNCube, toNxNCoordinates } from '../nxn/cube';
 import { FACE_BASIS, dot, type FaceletAddress, type Vector } from '../cube/coordinates';
 import type { Face } from '../cube/faces';
 

@@ -16,7 +16,7 @@ vi.mock('../../src/app/components/CubeViewport', () => ({
 }));
 
 import { App } from '../../src/app/App';
-import * as validator from '../../src/domain/validation/validateCube';
+import * as validator from '../../src/domain/threeByThree/validate';
 
 afterEach(() => {
   cleanup();
@@ -34,6 +34,18 @@ describe('editor', () => {
     expect(screen.getByText('95 squares remaining to assign.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Solve' }));
     expect(screen.getByRole('alert')).toHaveTextContent('missing or invalid pieces');
+  });
+
+  it('lets users paint 5x5 and rejects incomplete input before starting a worker', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Cube size'), { target: { value: '5' } });
+    expect(screen.getByText('150 squares remaining to assign.')).toBeInTheDocument();
+    expect(screen.getByText(/Changing size clears the current entry/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^green/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Square: unassigned' }));
+    expect(screen.getByText('149 squares remaining to assign.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Solve' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Assign every square before solving.');
   });
   it('selects colors, paints one square, and repaints it', () => {
     render(<App />);
