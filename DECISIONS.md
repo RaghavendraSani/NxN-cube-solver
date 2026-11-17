@@ -32,7 +32,7 @@ The original records do not always state why one option was chosen. Where the re
 
 ### D-04 — Supported sizes and incremental delivery (ADR-008)
 
-**Decision:** Establish 3×3 as the first complete slice, then add larger sizes incrementally. The current application exposes 3×3 and 4×4; 5×5 is in progress and disabled. The roadmap targets sizes through 20×20, but 2×2 is out of scope.
+**Decision:** Establish 3×3 as the first complete slice, then add larger sizes incrementally. The current application exposes 3×3 through 20×20. The roadmap targets sizes through 20×20, but 2×2 is out of scope.
 
 **Why:** Each size must have adequate validation, solving, rendering, playback, and tests before it is enabled. A general NxN state representation alone is not evidence of a working solver.
 
@@ -126,17 +126,29 @@ The original records do not always state why one option was chosen. Where the re
 
 **Limitations:** Owner approval enabled 4×4 despite remaining uncertainty: its validator has not been formally verified, success for every legal state is not established, and physical-cube verification remains pending. See the [roadmap](ROADMAP.md) and [reachability review](docs/4x4-reachability-review.md). A solver may fail or time out; verified replay does not guarantee it will find a solution for every legal input.
 
-### D-16 — 5×5 and NxN reduction direction (M11, in progress)
+### D-16 — 5×5 and NxN reduction direction (M11)
 
 **Decision:** First evaluate a suitable offline solver accepting a manually entered state. If none is suitable, build project-owned reduction: solve centers, pair edges, then solve the reduced 3×3 and replay the full solution. Keep the 5×5 option disabled until validation, solving, rendering, playback, and required tests meet the roadmap criteria. Do not enable 6×6 or larger as part of M11.
 
 **Why:** This was the approved M11 plan and maintains the offline, worker, adapter, and verification boundaries. The owner chose to continue this plan after considering an externally supplied NxN solver.
 
-**Current implementation:** Standalone 5×5 notation, piece-orbit grouping, preliminary entry checks, bounded center and edge searches, and a guarded reduced-5×5-to-3×3 handoff exist. `solveFive` combines those stages and replays its result, but the search bounds prevent it from handling arbitrary legal scrambles. A development-only `?preview5` path connects that solver to worker, UI, and playback for manual inspection; a one-inner-turn Chromium flow passed. The production size option remains disabled. Complete reachability validation and general solving remain outstanding. Preliminary validation success is not a proof of reachability.
+**Current implementation:** Superseded by D-21. The bounded 5×5 searches and the `?preview5` path were replaced by the general reduction solver, and sizes 5×5 through 20×20 are enabled.
 
-**Alternatives considered:** The existing vendored 4×4 package's 5×5 support is scramble generation, not an arbitrary-state solver. A GPL-3.0-only candidate was not incorporated; its license implications and suitability were not fully resolved. A separate Python/C NxN solver examined later required native subprocesses and separately downloaded tables; the owner decided not to pursue that folder. A later MPL-2.0 gullicube WebAssembly build accepted facelets and was trial-integrated, but both its own Node test and a Chromium edit-to-solve test aborted on this Windows machine before returning moves. The trial integration was removed and the 5×5 option remains disabled. These observations are not a formal legal or exhaustive dependency review.
+**Alternatives considered:** The existing vendored 4×4 package's 5×5 support is scramble generation, not an arbitrary-state solver. A GPL-3.0-only candidate was not incorporated; its license implications and suitability were not fully resolved. A separate Python/C NxN solver examined later required native subprocesses and separately downloaded tables; the owner decided not to pursue that folder. A later MPL-2.0 gullicube WebAssembly build accepted facelets and was trial-integrated, but both its own Node test and a Chromium edit-to-solve test aborted on this Windows machine before returning moves. The trial integration was removed. These observations are not a formal legal or exhaustive dependency review.
 
-**Readability preference:** The owner requested clearly identifiable files for each cube size, even where some code is repeated, so the implementation can be explained to a professor. Solvers and validators are organized under `threeByThree`, `fourByFour`, and `fiveByFive`; the application names its 3×3 and 4×4 validation paths explicitly, while common domain and rendering code remains shared where it already serves the same purpose. This organization does not by itself complete or enable the 5×5 solver.
+**Readability preference:** The owner requested clearly identifiable files for each cube size, even where some code is repeated, so the implementation can be explained to a professor. Solvers and validators are organized under `threeByThree`, `fourByFour`, and `fiveByFive`; the application names its 3×3 and 4×4 validation paths explicitly, while common domain and rendering code remains shared where it already serves the same purpose. D-21 keeps one-line, clearly named 5×5 entry points (`fiveByFive/solver.ts`, `fiveByFive/validate.ts`) but shares one implementation for all larger sizes.
+
+### D-21 — One general reduction solver for 5×5 through 20×20 (M11, M12)
+
+**Decision:** Replace the bounded size-specific 5×5 searches with a project-owned reduction solver that works for every size from 5 to 20 (and, as a check, 4). It finds one pure 3-cycle macro per center and wing orbit by searching commutators, builds a breadth-first conjugation table per orbit so that any reachable triple can be cycled exactly, repairs wing parities with one slice turn per odd orbit, and finishes with the existing 3×3 solver. The sizes are enabled through the capability table in `src/app/capabilities.ts`. The instanced renderer, the generic validator, `formatMoveN`, auto-play and skip controls, and an example loader belong to the same change.
+
+**Why:** The bounded searches could not handle arbitrary scrambles, and writing a separate solver per size would not reach 20×20. All sizes share the same orbit structure and invariants, so one implementation is smaller to explain and to test than eighteen. Solutions are long (about 10,000 moves at 20×20) because each repaired piece costs a conjugated commutator; correctness was prioritized over length, as the requirements say.
+
+**Evidence:** Sticker-by-sticker equality of the permutation engine with `applyNxNMove` at sizes 3, 4, 5, 8 and 20; exact 3-cycle checks of conjugated macros; validator stress tests in which every accepted corrupted state solved (about 3,000 random two-sticker corruptions of 5×5 to 9×9 cubes; 112 were accepted as legal and all 112 solved); more than 950 further generated cubes of sizes 4 to 20 solved and replay-verified, including single turns, short scrambles and parity-forcing slice turns; 20×20 solved in about 1.4 to 1.8 seconds in Node.
+
+**Limitations:** Playwright, a real browser and physical cubes were not available when this was written, so the browser tests for large sizes (`tests/e2e/large-solve.spec.ts`) are unrun and GPU frame rate was not measured; only CPU cost was. The solver was written to the owner's roadmap but the owner has not yet reviewed it. The 4×4 solver is still the vendored one. Validation completeness is supported by tests, not proved. Entering a large cube square by square is slow; the example loader exists for inspection.
+
+**Alternatives considered:** Continuing the bounded searches (no path to arbitrary states); a size-specific solver per size (not feasible to 20×20); the previously evaluated external solvers (rejected earlier, see D-16).
 
 ## Verification, delivery, and maintenance
 

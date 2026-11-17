@@ -91,7 +91,7 @@ export function CubeViewport({
 
   return (
     <>
-      <div className="cube-viewport" ref={container} />
+      <div className={`cube-viewport${size >= 8 ? ' cube-viewport-large' : ''}`} ref={container} />
       {error && <p role="alert">3D rendering is unavailable in this browser.</p>}
       <div className="view-controls" aria-label="Rotate cube">
         <button
@@ -121,6 +121,12 @@ export function CubeViewport({
           onClick={() => rotate('y', 1)}
         >
           Rotate right
+        </button>
+        <button type="button" disabled={error} onClick={() => renderer.current?.zoom(0.8)}>
+          Zoom in
+        </button>
+        <button type="button" disabled={error} onClick={() => renderer.current?.zoom(1.25)}>
+          Zoom out
         </button>
       </div>
     </>

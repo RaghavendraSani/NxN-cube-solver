@@ -1,8 +1,8 @@
 # CubeSolver Development Roadmap
 
-**Status:** M8, M9, and M10 approved with recorded limitations
+**Status:** M8, M9, and M10 approved with recorded limitations; M11 and M12 implemented and awaiting owner verification
 
-**Current phase:** M11 in progress
+**Current phase:** M11 and M12 awaiting owner browser verification
 
 **Release strategy:** 3×3 vertical slice first, then incremental larger cubes
 
@@ -32,8 +32,8 @@ Recommended status values:
 | M8 | End-to-end hardening and MVP release | Approved with exceptions | M7 |
 | M9 | NxN domain and notation extension for 4×4 | Complete and approved | M8 |
 | M10 | 4×4 solving, parity, and playback | Complete and approved | M9 |
-| M11 | 5×5 and generalized reduction foundations | In progress | M10 |
-| M12 | Larger-cube performance and 6×6–20×20 expansion | Not started | M11 |
+| M11 | 5×5 and generalized reduction foundations | Complete, awaiting owner verification | M10 |
+| M12 | Larger-cube performance and 6×6–20×20 expansion | Complete, awaiting owner verification | M11 |
 
 ---
 
@@ -678,23 +678,7 @@ M9 and the stable 3×3 solver pipeline from M6–M8.
 
 ## M11 — 5×5 and generalized reduction foundations
 
-**Status:** In progress. 5×5 remains disabled until its complete acceptance criteria are met.
-
-### Progress
-
-- Added standalone 5×5 notation for outer turns, inner slices, and two- and three-layer wide turns, with round-trip and invalid-input tests. This is not yet connected to solving or playback.
-- Added a guarded reduction handoff that extracts and validates a 3×3 only after 5×5 centers and edge triples are reduced. Center solving and edge pairing are not yet implemented.
-- Added a reduced-state solver that calls the existing 3×3 solver and independently replays its moves on the full 5×5. It is not a general 5×5 solver.
-- Added a 5×5 piece-position map for fixed, X, and T centers, middle edges, wings, and corners, with sticker coverage and center-orbit tests. It is not yet connected to a reduction algorithm.
-- Added preliminary 5×5 entry checks for dimensions, counts, fixed-center scheme, center orbits, piece color combinations, wing handedness, and projected 3×3 corner/middle-edge orientation and parity. These checks do not establish complete 5×5 physical reachability.
-- Added an internal center-only search with precomputed permutations, a misplaced-center lower bound and per-color X- and T-center pattern databases, depth and node limits, and full-domain replay of results. Representative one- through six-turn cases pass; exhaustion returns no result. This is not a general center-reduction algorithm and is not connected to the worker.
-- Extracted an edge-pairing predicate shared by the 5×5 reduction handoff; it recognizes paired triples but does not pair edges itself.
-- Added an internal verifier that replays proposed edge-pairing moves and checks both paired edges and preserved solved centers. A general edge-pairing algorithm remains outstanding.
-- Added a bounded edge-pairing search using one center-restoring sequence and its inverse, rotated through all 24 cube orientations, with outer-turn setups. One necessary test verifies a generated solution by replay; this is not a general edge-pairing algorithm.
-- Connected the bounded center, edge, and reduced-3×3 stages in an internal `solveFive` function with full-cube replay verification. It explicitly fails when a search is exhausted and is not connected to the worker or UI.
-- Evaluated an offline 5×5 solver candidate licensed GPL-3.0-only; it has not been incorporated. The project-owned reduction solver and complete 5×5 validation remain to be implemented.
-- Trialed an MPL-2.0 WebAssembly solver that accepts facelets. Its own Windows Node test and the project's Chromium 5×5 solve flow aborted before returning moves, so the trial integration was removed. The existing bounded M11 solver and disabled 5×5 UI remain in place.
-- Added a development-only `?preview5` path for manually entering a 5×5 state and exercising the existing bounded solver, worker, notation, and playback. A one-inner-turn Chromium entry → solve → playback check passed. The production 5×5 option stays disabled because arbitrary legal scrambles remain unsupported.
+**Status:** Complete and awaiting owner verification. The size is enabled; see "Actual progress and verification" for what was and was not run.
 
 ### Objective and expected outcome
 
@@ -721,6 +705,17 @@ M10.
 ### Acceptance criteria
 
 - 5×5 support is implemented without size-specific duplication of the shared UI workflow.
+
+### Actual progress and verification
+
+- Replaced the bounded 5×5 searches (centers, edges, reduced handoff, `?preview5`) with the general reduction solver in `src/solver/nxn`; `fiveByFive/solver.ts` and `fiveByFive/validate.ts` remain as one-line, clearly named entry points. See D-21.
+- Center and wing orbits are computed from the move group itself (`src/domain/nxn/orbits.ts`), and a sticker permutation engine (`engine.ts`) agrees sticker by sticker with `applyNxNMove` at sizes 3, 4, 5, 8, and 20.
+- General reachability validation (`src/domain/nxn/validate.ts`) replaces the preliminary 5×5 checks. Every legal generated cube is accepted, and every corrupted cube it accepted solved.
+- 5×5 results: generated, single-turn, single-slice, and short-scramble cubes all solve and replay-verify; 100 of 100 random 5×5 cubes in the final fuzz run solved; about 360 moves on average.
+- Existing 3×3 and 4×4 suites remain green.
+- Not run: the Playwright suite (no browser was available), and no physical-cube check.
+
+
 
 ---
 
@@ -754,6 +749,31 @@ M11.
 
 - A size is enabled only when its validation, solving, rendering, and playback criteria are met.
 - 20×20 support is not advertised merely because the UI accepts the number; it must pass the complete correctness and performance checks.
+
+### Actual progress and verification
+
+**Status:** Complete and awaiting owner verification.
+
+- **Strategies:** one reduction strategy covers even and odd sizes (orbit structure, pure 3-cycles by conjugation, wing parity by slice turns); there are no per-size algorithms. See D-21 and ARCHITECTURE.md.
+- **Capability flags:** `src/app/capabilities.ts` lists sizes 3 to 20 as enabled. Each size was enabled after the checks below passed; the table is the single place to switch a size off.
+- **Solve benchmark** (Node, one process, random 100-move scrambles, replay-verified; time is the slowest of the runs and includes building the tables cold):
+
+| Size | Average moves | Slowest solve |
+|---|---|---|
+| 5×5 | 364 | 0.8 s |
+| 8×8 | 1,401 | 1.1 s |
+| 10×10 | 2,296 | 0.6 s |
+| 15×15 | 5,250 | 0.8 s |
+| 20×20 | 9,672 | 1.4 s |
+
+- **Correctness runs:** 100 random cubes each of sizes 4 to 10 and 25 each of sizes 11 to 20 (950 cubes), plus the single-turn, short-scramble, and parity-forcing cases in the unit tests; no failures.
+- **Rendering:** `createCubeScene` is instanced, with five draw objects at every size (previously about 12,000 meshes at 20×20). Measured in Node: building a 20×20 scene takes about 15 ms, one animation frame about 0.05 ms of JavaScript, and a color update about 0.5 ms. Picking and layer-animation destinations are unit-tested at sizes 3, 4, 7, 8, and 20. Zoom controls and a larger viewport help with small squares.
+- **Long solutions:** progress bar, auto-play, Skip 10, Skip 100, and Go to move for solutions over 30 moves; playback still animates one move at a time, and skipping applies moves with `applyMovesFast`.
+- **Worker:** solving runs in the existing worker; a 20×20 solve takes about 1.5 seconds there.
+- **Fixtures:** valid-state, invalid-state, move, and solved-state tests exist for the shared code and for sizes 5 to 20 (`tests/unit/nxn`, `tests/unit/rendering`, `tests/smoke/largeCubes.test.tsx`).
+- **Not run, so not claimed:** the Playwright suite including the new `tests/e2e/large-solve.spec.ts`; GPU frame rate on real devices; physical-cube verification; the 4×4 limitations recorded for M10 are unchanged.
+- **Known limits:** solutions are long (about 10,000 moves at 20×20), entering a large cube by hand means painting every square, and solving 4×4 still uses the vendored solver.
+
 
 ## Milestone completion and Git workflow
 

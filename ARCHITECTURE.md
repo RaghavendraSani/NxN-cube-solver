@@ -296,6 +296,18 @@ Measure before optimizing, but plan for:
 
 The logical model must support the complete cube even if the renderer uses an optimized surface representation.
 
+**Implemented (M12):** `createCubeScene` draws a cube with four instanced meshes (bodies, stickers, unassigned markers, layer highlights) and one core block, so there are five draw objects at every size. Only surface cubies are instanced; the hidden interior is covered by the core. Picking raycasts the sticker instances and maps the instance id to its logical address. A layer turn rotates only the instances of that layer and restores them when it finishes. CPU cost measured in Node: building a 20×20 scene takes about 15 ms and an animation frame about 0.05 ms. GPU frame rate has not been measured on real devices.
+
+### N×N reduction solver
+
+Sizes 5 to 20 are solved by reduction in `src/solver/nxn`, on top of the pure cube mathematics in `src/domain/nxn` (sticker permutation engine, piece and orbit structure, invariants, validation). The method rests on three facts that the tests check:
+
+1. Layer turns never mix orbits, so each center orbit and wing orbit is an independent small puzzle.
+2. A commutator `[U, S·Q·S']` of an outer turn with a conjugate of two single layers can be a pure 3-cycle of centers or of whole wings. Conjugating such a macro `M` by any word `W` gives the pure 3-cycle `W⁻¹·M·W` on the images of `M`'s stickers, whatever else `W` disturbs. A breadth-first table over those images supplies a word for every reachable triple.
+3. The only parities pure 3-cycles cannot change are the permutation parities of the wing orbits (each inner slice turn toggles exactly one) and, on odd cubes, the middle-edge parity (which must match the corners, as on a 3×3). The solver fixes wing parities with one slice turn each before solving, and the validator rejects the rest.
+
+After centers and wings match the target arrangement, the cube is a reduced 3×3 that the existing solver finishes. Every result is replayed on the whole cube.
+
 ## 12. Error handling
 
 User-facing errors remain intentionally simple:

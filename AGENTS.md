@@ -163,11 +163,9 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## Current development progress (2026-11-14)
+## Current development progress (2026-11-16)
 
-- Milestone 11 (5×5 Solver & Production Release) is **in progress**.
-- Center reduction engine (`src/solver/fiveByFive/centers.ts`) now implements a deterministic solver for any legal 5×5 scramble and passes all unit tests.
-- Edge‑pairing engine (`src/solver/fiveByFive/edges.ts`) fully implements pairing, includes parity handling, and all related unit tests pass.
-- Validation (`src/domain/fiveByFive/validate.ts`) now includes full reachability checks and extensive random‑scramble tests.
-- UI integration: the 5×5 option is always visible in the dropdown, the preview flag has been removed, and validation messages are displayed correctly.
-- End‑to‑end tests have been updated but are pending execution.
+- Milestones 11 and 12 are **implemented and awaiting owner verification**. Sizes 3×3 through 20×20 are enabled in `src/app/capabilities.ts`.
+- Sizes 5×5 to 20×20 use the general reduction solver in `src/solver/nxn` with the cube mathematics in `src/domain/nxn` (`engine.ts`, `orbits.ts`, `invariants.ts`, `validate.ts`). The bounded 5×5 searches and `?preview5` were removed; see D-21 in `DECISIONS.md`.
+- The renderer is instanced (`src/rendering/cubeScene.ts`); the old per-sticker mesh API and `pickFacelet.ts` no longer exist.
+- Not yet run: the Playwright suite (including `tests/e2e/large-solve.spec.ts`), GPU frame-rate measurement, and any physical-cube test.

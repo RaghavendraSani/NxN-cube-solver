@@ -74,6 +74,11 @@ h1 {
   display: block;
 }
 
+/* Big cubes need more room for their small squares. */
+.cube-viewport-large {
+  height: min(90vw, 36rem);
+}
+
 /* Palette and rotation controls wrap when space is limited. */
 .palette,
 .view-controls {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createUnassignedCube } from '../domain/cube/state';
 import {
   countColors,
@@ -9,12 +9,14 @@ import {
 import type { FaceletAddress } from '../domain/cube/coordinates';
 import { CubeViewport, type CubeViewportHandle } from './components/CubeViewport';
 import { validateCube } from '../domain/threeByThree/validate';
-import { runFiveSolverWorker, runFourSolverWorker, runSolverWorker } from '../solver/workerClient';
-import { applyNxNMove, createNxNCube, isNxNSolved, type LayerMove } from '../domain/nxn/cube';
+import { runFourSolverWorker, runNxNSolverWorker, runSolverWorker } from '../solver/workerClient';
+import { createNxNCube, isNxNSolved, type LayerMove } from '../domain/nxn/cube';
 import { check4Entry } from '../domain/fourByFour/validate';
-import { formatMove4 } from '../domain/fourByFour/notation';
-import { check5Entry } from '../domain/fiveByFive/validate';
-import { formatMove5 } from '../domain/fiveByFive/notation';
+import { formatMoveN } from '../domain/nxn/notation';
+import { checkNxNEntry, type NxNEntryStatus } from '../domain/nxn/validate';
+import { applyMovesFast } from '../domain/nxn/applyMoves';
+import { createExampleCube } from '../domain/nxn/example';
+import { ENABLED_SIZES } from './capabilities';
 import type { Color } from '../domain/cube/colors';
 import type { Move } from '../domain/cube/moves';
 import type { CubeState } from '../domain/cube/types';
@@ -47,19 +49,28 @@ function validateFourByFour(status: ReturnType<typeof check4Entry>['status']): s
     : 'The 4×4 entry has missing or invalid pieces. Check the message above.';
 }
 
-/** Explain why a 5×5 entry cannot be sent to the solver. */
-function validateFiveByFive(status: ReturnType<typeof check5Entry>['status']): string | null {
-  if (status === 'checks-ok') return null;
-  if (status === 'incomplete') return 'Assign every square before solving.';
-  if (status === 'color-count') return 'Each color must appear exactly 25 times.';
-  return `The 5×5 entry has invalid ${status.replaceAll('-', ' ')}. Check the painted squares.`;
+/** Explain why an entry of 5×5 or larger cannot be sent to the solver. */
+function validateLargeCube(status: NxNEntryStatus, size: number): string | null {
+  const messages: Record<NxNEntryStatus, string | null> = {
+    incomplete: 'Assign every square before solving.',
+    'color-count': `Each color must appear exactly ${size * size} times.`,
+    'center-count': 'Each group of matching center squares must contain every color equally.',
+    'center-scheme': 'The fixed center colors do not match the supported color scheme.',
+    'corner-piece': 'A corner has an invalid or duplicated color combination.',
+    'corner-orientation': 'The corner orientations are impossible.',
+    'wing-piece': 'An edge piece has an invalid or duplicated color combination.',
+    'edge-orientation': 'The edge orientations are impossible.',
+    parity: 'The piece arrangement is impossible.',
+    'counts-ok': null,
+  };
+  return messages[status];
 }
 
 /** Coordinate cube entry, worker solving, and one-move-at-a-time playback. */
 export function App() {
   // Puzzle state and display animation state remain separate throughout the session.
   const [cube, setCube] = useState(createUnassignedCube);
-  const [size, setSize] = useState<3 | 4 | 5>(3);
+  const [size, setSize] = useState(3);
   const [selectedColor, setSelectedColor] = useState<PaletteColor>('red');
   const [phase, setPhase] = useState<'editing' | 'invalid' | 'solving' | 'solved' | 'error'>(
     'editing',
@@ -75,6 +86,8 @@ export function App() {
   const [viewRotating, setViewRotating] = useState(false);
   const [duration, setDuration] = useState(600);
   const [playbackError, setPlaybackError] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [jumpTarget, setJumpTarget] = useState('');
   const viewportRef = useRef<CubeViewportHandle>(null);
   const animatingRef = useRef(false);
   const workerRef = useRef<{ dispose: () => boolean } | null>(null);
@@ -88,7 +101,10 @@ export function App() {
   );
   const counts = countColors(cube);
   const fourEntryCheck = size === 4 ? check4Entry(cube).status : null;
-  const fiveEntryCheck = size === 5 ? check5Entry(cube).status : null;
+  const largeEntryCheck = useMemo(
+    () => (size >= 5 ? checkNxNEntry(cube, size) : null),
+    [cube, size],
+  );
   /** Paint one selected facelet while editing is available. */
   function paint(address: FaceletAddress) {
     if (workerRef.current || phase === 'solved') return;
@@ -103,7 +119,7 @@ export function App() {
         ? validateThreeByThree(cube)
         : size === 4
           ? validateFourByFour(fourEntryCheck!)
-          : validateFiveByFive(fiveEntryCheck!);
+          : validateLargeCube(largeEntryCheck!, size);
     if (message) {
       setValidationMessage(message);
       setPhase('invalid');
@@ -112,14 +128,14 @@ export function App() {
     try {
       const createWorker = () =>
         new Worker(new URL('../workers/solver.worker.ts', import.meta.url), { type: 'module' });
-      let request;
+      let request: ReturnType<typeof runSolverWorker> | ReturnType<typeof runNxNSolverWorker>;
       if (size === 3) {
         request = runSolverWorker(cube, createWorker);
       } else if (size === 4) {
         request = runFourSolverWorker(cube, createWorker);
         setReference({ U: [...cube.U], F: [...cube.F] });
       } else {
-        request = runFiveSolverWorker(cube, createWorker);
+        request = runNxNSolverWorker(cube, size, createWorker);
         setReference({ U: [...cube.U], F: [...cube.F] });
       }
       workerRef.current = request;
@@ -157,6 +173,8 @@ export function App() {
     setReference(null);
     setMoveIndex(0);
     setPlaybackError(false);
+    setAutoPlay(false);
+    setJumpTarget('');
     setDuration(600);
     setSession((current) => current + 1);
     setPhase('editing');
@@ -166,7 +184,7 @@ export function App() {
     if (animatingRef.current || viewRotating || phase !== 'solved' || moveIndex >= solution.length)
       return;
     const move = solution[moveIndex];
-    const next = applyNxNMove(cube, size, move);
+    const next = applyMovesFast(cube, size, [move]);
     animatingRef.current = true;
     const started = viewportRef.current?.animateMove(move, duration, next, () => {
       setCube(next);
@@ -178,6 +196,26 @@ export function App() {
     if (started) setAnimating(true);
     else animatingRef.current = false;
   }
+  /** Apply several moves at once without animation, for navigating long solutions. */
+  function skipTo(requested: number) {
+    if (animatingRef.current || viewRotating || phase !== 'solved') return;
+    const target = Math.min(Math.max(Math.trunc(requested), moveIndex), solution.length);
+    if (target === moveIndex) return;
+    setAutoPlay(false);
+    const next = applyMovesFast(cube, size, solution.slice(moveIndex, target));
+    setCube(next);
+    setMoveIndex(target);
+    if (target === solution.length && !isNxNSolved(next, size)) setPlaybackError(true);
+  }
+  // Auto-play still advances one animated move at a time; it only presses "Next move" for you.
+  useEffect(() => {
+    if (!autoPlay) return;
+    if (phase !== 'solved' || moveIndex >= solution.length) {
+      setAutoPlay(false);
+      return;
+    }
+    if (!animating && !viewRotating) nextMove();
+  }, [autoPlay, animating, viewRotating, moveIndex, phase]);
   const currentMove = phase === 'solved' ? solution[moveIndex] : undefined;
   const complete = phase === 'solved' && moveIndex === solution.length && isNxNSolved(cube, size);
   return (
@@ -191,16 +229,18 @@ export function App() {
             value={size}
             disabled={phase === 'solving' || phase === 'solved' || viewRotating}
             onChange={(event) => {
-              const next = Number(event.target.value) as 3 | 4 | 5;
+              const next = Number(event.target.value);
               setSize(next);
               setCube(createNxNCube(next));
               setSession((current) => current + 1);
               setPhase('editing');
             }}
           >
-            <option value={3}>3×3</option>
-            <option value={4}>4×4</option>
-            <option value={5}>5×5</option>
+            {ENABLED_SIZES.map((option) => (
+              <option key={option} value={option}>
+                {option}×{option}
+              </option>
+            ))}
           </select>
         </label>
         {size !== 3 && <p>Changing size clears the current entry.</p>}
@@ -225,6 +265,20 @@ export function App() {
             </button>
           ))}
         </div>
+        <p>
+          <button
+            type="button"
+            disabled={phase === 'solving' || phase === 'solved'}
+            onClick={() => {
+              setCube(createExampleCube(size));
+              setPhase('editing');
+            }}
+          >
+            Load example
+          </button>{' '}
+          Fills in a legal scrambled cube of this size so you can try the solver without a physical
+          cube.
+        </p>
         <CubeViewport
           key={session}
           ref={viewportRef}
@@ -250,8 +304,14 @@ export function App() {
             not been checked.
           </p>
         )}
-        {fiveEntryCheck && fiveEntryCheck !== 'incomplete' && fiveEntryCheck !== 'checks-ok' && (
-          <p>{validateFiveByFive(fiveEntryCheck)}</p>
+        {largeEntryCheck && largeEntryCheck !== 'incomplete' && largeEntryCheck !== 'counts-ok' && (
+          <p>{validateLargeCube(largeEntryCheck, size)}</p>
+        )}
+        {largeEntryCheck === 'counts-ok' && (
+          <p>
+            The entry passes every reachability check. The solver still verifies each move sequence
+            before showing it.
+          </p>
         )}
         {phase !== 'solved' && (
           <button type="button" disabled={phase === 'solving' || viewRotating} onClick={startSolve}>
@@ -293,6 +353,14 @@ export function App() {
               )
             )}
             {solution.length > 0 && (
+              <progress
+                aria-label="Solution progress"
+                max={solution.length}
+                value={moveIndex}
+                style={{ width: '100%' }}
+              />
+            )}
+            {solution.length > 0 && (
               <p aria-label="Move sequence">
                 {solution.map((move, index) => (
                   <span
@@ -300,7 +368,7 @@ export function App() {
                     className={index === moveIndex ? 'current-move' : undefined}
                     aria-current={index === moveIndex ? 'step' : undefined}
                   >
-                    {size === 5 ? formatMove5(move) : formatMove4(move)}{' '}
+                    {formatMoveN(move)}{' '}
                   </span>
                 ))}
               </p>
@@ -309,9 +377,7 @@ export function App() {
               <>
                 <p>
                   Move {moveIndex + 1} of {solution.length}:{' '}
-                  <strong>
-                    {size === 5 ? formatMove5(currentMove) : formatMove4(currentMove)}
-                  </strong>
+                  <strong>{formatMoveN(currentMove)}</strong>
                 </p>
                 <p>
                   <span aria-hidden="true">{currentMove.turns === -1 ? '↶' : '↷'}</span> Turn the{' '}
@@ -342,11 +408,60 @@ export function App() {
                     <option value={1200}>Slow</option>
                     <option value={600}>Normal</option>
                     <option value={250}>Fast</option>
+                    <option value={80}>Very fast</option>
                   </select>
                 </label>{' '}
-                <button type="button" onClick={nextMove} disabled={animating || viewRotating}>
+                <button
+                  type="button"
+                  onClick={nextMove}
+                  disabled={animating || viewRotating || autoPlay}
+                >
                   Next move
+                </button>{' '}
+                <button
+                  type="button"
+                  aria-pressed={autoPlay}
+                  onClick={() => setAutoPlay((current) => !current)}
+                  disabled={viewRotating}
+                >
+                  {autoPlay ? 'Pause' : 'Auto-play'}
                 </button>
+                {solution.length > 30 && (
+                  <p>
+                    Long solution: skip ahead without animation, or jump to a move number.{' '}
+                    <button
+                      type="button"
+                      disabled={animating || viewRotating}
+                      onClick={() => skipTo(moveIndex + 10)}
+                    >
+                      Skip 10
+                    </button>{' '}
+                    <button
+                      type="button"
+                      disabled={animating || viewRotating}
+                      onClick={() => skipTo(moveIndex + 100)}
+                    >
+                      Skip 100
+                    </button>{' '}
+                    <label>
+                      Go to move{' '}
+                      <input
+                        type="number"
+                        min={moveIndex}
+                        max={solution.length}
+                        value={jumpTarget}
+                        onChange={(event) => setJumpTarget(event.target.value)}
+                      />
+                    </label>{' '}
+                    <button
+                      type="button"
+                      disabled={animating || viewRotating || jumpTarget === ''}
+                      onClick={() => skipTo(Number(jumpTarget) - 1)}
+                    >
+                      Go
+                    </button>
+                  </p>
+                )}
               </>
             )}
             {complete && (

@@ -1,5 +1,10 @@
 import type { CubeState } from '../domain/cube/types';
-import type { FiveSolveResponse, FourSolveResponse, SolveRequest, SolveResponse } from './protocol';
+import type {
+  FourSolveResponse,
+  LayerSolveResponse,
+  SolveRequest,
+  SolveResponse,
+} from './protocol';
 
 /** The timeout is a failure safeguard, not a user-facing cancellation control. */
 export function runSolverWorker(state: CubeState, createWorker: () => Worker, timeoutMs = 120_000) {
@@ -15,13 +20,14 @@ export function runFourSolverWorker(
   return runWorker<FourSolveResponse>({ size: 4, state }, createWorker, timeoutMs);
 }
 
-/** Run a bounded 5×5 preview solve using the existing worker lifecycle. */
-export function runFiveSolverWorker(
+/** Run a 5×5 to 20×20 solve with the same timeout and cleanup behavior as 3×3. */
+export function runNxNSolverWorker(
   state: CubeState,
+  size: number,
   createWorker: () => Worker,
   timeoutMs = 120_000,
 ) {
-  return runWorker<FiveSolveResponse>({ size: 5, state }, createWorker, timeoutMs);
+  return runWorker<LayerSolveResponse>({ size, state }, createWorker, timeoutMs);
 }
 
 /** Settle a worker request once and release it on success, failure, or timeout. */

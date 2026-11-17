@@ -1,11 +1,16 @@
 import {
   BoxGeometry,
   CircleGeometry,
+  Color as ThreeColor,
+  DynamicDrawUsage,
   Group,
+  InstancedMesh,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
   Quaternion,
+  type Raycaster,
   Vector3,
 } from 'three';
 import { FACE_BASIS, type FaceletAddress } from '../domain/cube/coordinates';
@@ -26,82 +31,169 @@ const COLOR_VALUES: Record<Color, number> = {
   unassigned: 0xffffff,
 };
 
-/** Build the cube meshes and expose operations used by the renderer. */
+/**
+ * Build the cube as four instanced meshes (bodies, stickers, unassigned markers and layer
+ * highlights), so the number of draw calls does not grow with the cube size. Only cubies on
+ * the surface are drawn; one dark core fills the interior. Sticker `i` is the facelet at
+ * `faceIndex * size² + row * size + column`, the same order as the solver's engine.
+ */
 export function createCubeScene(size = 3) {
   const group = new Group();
   const step = 3 / size;
-  const bodyGeometry = new BoxGeometry(0.98 * step, 0.98 * step, 0.98 * step);
-  const bodyMaterial = new MeshBasicMaterial({ color: 0x151515 });
-  const cubies: Mesh[] = [];
+  const faceSize = size * size;
+  const total = 6 * faceSize;
+  const edge = size - 1;
+
+  // Sticker geometry: base transforms and doubled integer coordinates per facelet.
+  const addresses: FaceletAddress[] = [];
+  const stickerBase: Matrix4[] = [];
+  const markerBase: Matrix4[] = [];
+  const highlightBase: Matrix4[] = [];
+  const positions: [number, number, number][] = [];
+  const up = new Vector3(0, 0, 1);
+  const one = new Vector3(1, 1, 1);
+  FACES.forEach((face) => {
+    for (let row = 0; row < size; row++)
+      for (let column = 0; column < size; column++) {
+        const address: FaceletAddress = { face, row, column };
+        const { position, normal } = toNxNCoordinates(address, size);
+        const outward = new Vector3(...normal);
+        const translation = new Vector3(...position)
+          .multiplyScalar(step / 2)
+          .addScaledVector(outward, 0.51 * step);
+        const rotation = new Quaternion().setFromUnitVectors(up, outward);
+        const matrix = new Matrix4().compose(translation, rotation, one);
+        addresses.push(address);
+        positions.push([position[0], position[1], position[2]]);
+        stickerBase.push(matrix);
+        markerBase.push(matrix.clone().multiply(new Matrix4().makeTranslation(0, 0, 0.002)));
+        highlightBase.push(matrix.clone().multiply(new Matrix4().makeTranslation(0, 0, 0.003)));
+      }
+  });
+
+  // Surface cubies only; the interior is covered by a single core block.
+  const cubieBase: Matrix4[] = [];
+  const cubieCoordinates: [number, number, number][] = [];
   for (let x = 0; x < size; x++)
     for (let y = 0; y < size; y++)
       for (let z = 0; z < size; z++) {
-        const cubie = new Mesh(bodyGeometry, bodyMaterial);
-        cubie.position.set(
-          (x - (size - 1) / 2) * step,
-          (y - (size - 1) / 2) * step,
-          (z - (size - 1) / 2) * step,
+        if (![x, y, z].some((c) => c === 0 || c === edge)) continue;
+        cubieBase.push(
+          new Matrix4().makeTranslation(
+            (x - edge / 2) * step,
+            (y - edge / 2) * step,
+            (z - edge / 2) * step,
+          ),
         );
-        group.add(cubie);
-        cubies.push(cubie);
+        // Doubled coordinates, matching sticker positions.
+        cubieCoordinates.push([2 * x - edge, 2 * y - edge, 2 * z - edge]);
       }
+
+  const bodyGeometry = new BoxGeometry(0.98 * step, 0.98 * step, 0.98 * step);
+  const bodyMaterial = new MeshBasicMaterial({ color: 0x151515 });
+  const bodies = new InstancedMesh(bodyGeometry, bodyMaterial, cubieBase.length);
+  bodies.instanceMatrix.setUsage(DynamicDrawUsage);
+  cubieBase.forEach((matrix, i) => bodies.setMatrixAt(i, matrix));
+  const coreSide = Math.max(size - 2, 1) * step;
+  const coreGeometry = new BoxGeometry(coreSide, coreSide, coreSide);
+  const core = new Mesh(coreGeometry, bodyMaterial);
+
   const stickerGeometry = new PlaneGeometry(0.9 * step, 0.9 * step);
-  const materials = Object.fromEntries(
-    Object.entries(COLOR_VALUES).map(([key, color]) => [key, new MeshBasicMaterial({ color })]),
-  ) as Record<Color, MeshBasicMaterial>;
-  const facelets: Mesh[] = [];
+  const stickerMaterial = new MeshBasicMaterial({ color: 0xffffff });
+  const stickers = new InstancedMesh(stickerGeometry, stickerMaterial, total);
+  stickers.instanceMatrix.setUsage(DynamicDrawUsage);
   const markerGeometry = new CircleGeometry(0.06 * step, 16);
   const markerMaterial = new MeshBasicMaterial({ color: 0x777777 });
+  const markers = new InstancedMesh(markerGeometry, markerMaterial, total);
+  markers.instanceMatrix.setUsage(DynamicDrawUsage);
+  // Markers are not pickable; clicks always resolve to the sticker beneath them.
+  markers.raycast = () => {};
+  const highlightGeometry = new PlaneGeometry(0.9 * step, 0.9 * step);
   const highlightMaterial = new MeshBasicMaterial({
     color: 0xffcf00,
     transparent: true,
     opacity: 0.35,
     depthWrite: false,
   });
-  // Stickers retain logical addresses even when the displayed cube rotates.
-  for (const face of FACES) {
-    for (let row = 0; row < size; row++) {
-      for (let column = 0; column < size; column++) {
-        const address: FaceletAddress = { face, row, column };
-        const { position, normal } = toNxNCoordinates(address, size);
-        const sticker = new Mesh(stickerGeometry, materials.unassigned);
-        const outward = new Vector3(...normal);
-        sticker.position
-          .set(...position)
-          .multiplyScalar(step / 2)
-          .addScaledVector(outward, 0.51 * step);
-        sticker.quaternion.copy(new Quaternion().setFromUnitVectors(new Vector3(0, 0, 1), outward));
-        sticker.userData.address = address;
-        const marker = new Mesh(markerGeometry, markerMaterial);
-        marker.position.z = 0.002;
-        marker.raycast = () => {};
-        sticker.add(marker);
-        const highlight = new Mesh(stickerGeometry, highlightMaterial);
-        highlight.position.z = 0.003;
-        highlight.visible = false;
-        highlight.raycast = () => {};
-        sticker.add(highlight);
-        group.add(sticker);
-        facelets.push(sticker);
-      }
-    }
+  const highlights = new InstancedMesh(highlightGeometry, highlightMaterial, total);
+  highlights.instanceMatrix.setUsage(DynamicDrawUsage);
+  highlights.raycast = () => {};
+
+  const hidden = new Matrix4().makeScale(0, 0, 0);
+  const marked = new Array<boolean>(total).fill(true);
+  const lit = new Array<boolean>(total).fill(false);
+  const colorObjects = Object.fromEntries(
+    Object.entries(COLOR_VALUES).map(([key, hex]) => [key, new ThreeColor(hex)]),
+  ) as Record<Color, ThreeColor>;
+  for (let i = 0; i < total; i++) {
+    stickers.setMatrixAt(i, stickerBase[i]);
+    stickers.setColorAt(i, colorObjects.unassigned);
+    markers.setMatrixAt(i, markerBase[i]);
+    highlights.setMatrixAt(i, hidden);
   }
+  group.add(core, bodies, stickers, markers, highlights);
+
+  const flush = () => {
+    for (const mesh of [bodies, stickers, markers, highlights])
+      mesh.instanceMatrix.needsUpdate = true;
+    if (stickers.instanceColor) stickers.instanceColor.needsUpdate = true;
+  };
+  const indexOfLayer = (index: number, axis: Vector3) => {
+    const [x, y, z] = positions[index];
+    return (edge - (x * axis.x + y * axis.y + z * axis.z)) / 2;
+  };
+  const indexOf = (address: FaceletAddress) =>
+    FACES.indexOf(address.face) * faceSize + address.row * size + address.column;
+  const paintInstance = (i: number, rotation?: Matrix4) => {
+    const apply = (mesh: InstancedMesh, matrix: Matrix4, visible: boolean) =>
+      mesh.setMatrixAt(
+        i,
+        visible ? (rotation ? rotation.clone().multiply(matrix) : matrix) : hidden,
+      );
+    apply(stickers, stickerBase[i], true);
+    apply(markers, markerBase[i], marked[i]);
+    apply(highlights, highlightBase[i], lit[i]);
+  };
+
   return {
     group,
-    facelets,
+    addresses,
+    /** Closest sticker hit by the ray, as its logical address. */
+    pick(raycaster: Raycaster): FaceletAddress | null {
+      const hit = raycaster.intersectObject(stickers, false)[0];
+      return hit && hit.instanceId !== undefined ? addresses[hit.instanceId] : null;
+    },
+    /** Current transform of one sticker (used by tests and animation checks). */
+    stickerMatrix(address: FaceletAddress): Matrix4 {
+      const matrix = new Matrix4();
+      stickers.getMatrixAt(indexOf(address), matrix);
+      return matrix;
+    },
+    stickerColor(address: FaceletAddress): number {
+      const color = new ThreeColor();
+      stickers.getColorAt(indexOf(address), color);
+      return color.getHex();
+    },
+    isMarked(address: FaceletAddress): boolean {
+      return marked[indexOf(address)];
+    },
+    highlightedCount(): number {
+      return lit.filter(Boolean).length;
+    },
+    drawCalls: 5,
     /** Show which stickers belong to the selected layer range. */
     setHighlight(face: Face | null, layer = 0, width = 1) {
       const axis = face === null ? null : new Vector3(...FACE_BASIS[face][0]);
-      for (const sticker of facelets) {
-        const { position } = toNxNCoordinates(sticker.userData.address as FaceletAddress, size);
-        const index = axis === null ? -1 : (size - 1 - new Vector3(...position).dot(axis)) / 2;
-        sticker.children[1].visible = axis !== null && index >= layer && index < layer + width;
+      for (let i = 0; i < total; i++) {
+        const index = axis === null ? -1 : indexOfLayer(i, axis);
+        lit[i] = axis !== null && index >= layer && index < layer + width;
+        highlights.setMatrixAt(i, lit[i] ? highlightBase[i] : hidden);
       }
+      flush();
     },
-    /** Temporarily group the selected meshes so they can turn together. */
+    /** Temporarily rotate the selected instances so they turn together. */
     beginLayerTurn(move: Move | LayerMove) {
-      const normal = FACE_BASIS[move.face][0];
-      const axis = new Vector3(...normal);
+      const axis = new Vector3(...FACE_BASIS[move.face][0]);
       const layer = 'layer' in move ? move.layer : 0;
       const width = 'width' in move ? move.width : 1;
       if (
@@ -112,59 +204,59 @@ export function createCubeScene(size = 3) {
         layer + width > size
       )
         throw new RangeError('Invalid animation layer.');
-      const pivot = new Group();
-      group.add(pivot);
-      const selected = [...cubies, ...facelets].filter((object) => {
-        if (object.userData.address) {
-          const position = toNxNCoordinates(
-            object.userData.address as FaceletAddress,
-            size,
-          ).position;
-          const index = (size - 1 - new Vector3(...position).dot(axis)) / 2;
-          return index >= layer && index < layer + width;
-        }
-        const index = Math.round((size - 1) / 2 - object.position.dot(axis) / step);
-        return index >= layer && index < layer + width;
+      const movingStickers: number[] = [];
+      for (let i = 0; i < total; i++) {
+        const index = indexOfLayer(i, axis);
+        if (index >= layer && index < layer + width) movingStickers.push(i);
+      }
+      const movingBodies: number[] = [];
+      cubieCoordinates.forEach(([x, y, z], i) => {
+        const index = (edge - (x * axis.x + y * axis.y + z * axis.z)) / 2;
+        if (index >= layer && index < layer + width) movingBodies.push(i);
       });
-      const originals = selected.map((object) => ({
-        object,
-        position: object.position.clone(),
-        quaternion: object.quaternion.clone(),
-      }));
-      selected.forEach((object) => pivot.add(object));
       return {
-        /** Rotate the temporary group to the requested animation progress. */
+        /** Rotate the selected instances to the requested animation progress. */
         setProgress(progress: number) {
-          pivot.quaternion.setFromAxisAngle(axis, (-move.turns * Math.PI * progress) / 2);
+          const rotation = new Matrix4().makeRotationAxis(
+            axis,
+            (-move.turns * Math.PI * progress) / 2,
+          );
+          for (const i of movingStickers) paintInstance(i, rotation);
+          for (const i of movingBodies)
+            bodies.setMatrixAt(i, rotation.clone().multiply(cubieBase[i]));
+          flush();
         },
-        /** Restore mesh positions; the caller then paints the next state. */
+        /** Restore instance transforms; the caller then paints the next state. */
         finish() {
-          for (const { object, position, quaternion } of originals) {
-            group.add(object);
-            object.position.copy(position);
-            object.quaternion.copy(quaternion);
-          }
-          group.remove(pivot);
+          for (const i of movingStickers) paintInstance(i);
+          for (const i of movingBodies) bodies.setMatrixAt(i, cubieBase[i]);
+          flush();
         },
       };
     },
     /** Update sticker colors and unassigned markers. */
     setState(state: CubeState) {
-      for (const sticker of facelets) {
-        const { face, row, column } = sticker.userData.address as FaceletAddress;
-        sticker.material = materials[state[face][row * size + column]];
-        sticker.children[0].visible = state[face][row * size + column] === 'unassigned';
+      for (let i = 0; i < total; i++) {
+        const { face, row, column } = addresses[i];
+        const color = state[face][row * size + column];
+        stickers.setColorAt(i, colorObjects[color]);
+        marked[i] = color === 'unassigned';
+        markers.setMatrixAt(i, marked[i] ? markerBase[i] : hidden);
       }
+      flush();
     },
-    /** Dispose shared geometries and materials once. */
+    /** Dispose shared geometries, materials and instance buffers once. */
     dispose() {
+      for (const mesh of [bodies, stickers, markers, highlights]) mesh.dispose();
       bodyGeometry.dispose();
+      coreGeometry.dispose();
       bodyMaterial.dispose();
       stickerGeometry.dispose();
+      stickerMaterial.dispose();
       markerGeometry.dispose();
       markerMaterial.dispose();
+      highlightGeometry.dispose();
       highlightMaterial.dispose();
-      Object.values(materials).forEach((material) => material.dispose());
     },
   };
 }

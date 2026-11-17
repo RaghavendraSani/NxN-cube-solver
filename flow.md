@@ -8,10 +8,11 @@ are called out explicitly. Update this document when an execution path changes.
 
 - `src/solver/threeByThree/solver.ts`: 3×3 conversion, solving, and replay verification.
 - `src/solver/fourByFour/solver.ts`: 4×4 solving and replay verification; `convert.ts` translates its state for the vendored solver.
-- `src/solver/fiveByFive/solver.ts`: in-progress bounded 5×5 reduction and replay verification, reached by the local preview only.
-- `src/solver/solveRequest.ts`: worker-side selection of the 3×3, 4×4, or local-preview 5×5 solver. The shared worker client handles timeout and cleanup.
-- Validators are in `src/domain/threeByThree/validate.ts`, `src/domain/fourByFour/validate.ts`, and `src/domain/fiveByFive/validate.ts`; the 5×5 checks remain preliminary.
-- Size-specific notation is in `src/domain/fourByFour/notation.ts` and `src/domain/fiveByFive/notation.ts`; the preview uses `formatMove5` for playback.
+- `src/solver/nxn/`: the shared reduction solver for 5×5 through 20×20 (`solveNxN.ts`), with `macros.ts`, `conjugator.ts` and `reduction.ts` as its stages. `src/solver/fiveByFive/solver.ts` is a one-line entry point that names size 5 for readers.
+- `src/solver/solveRequest.ts`: worker-side selection of the 3×3, 4×4, or N×N solver. The shared worker client handles timeout and cleanup.
+- Validators are in `src/domain/threeByThree/validate.ts`, `src/domain/fourByFour/validate.ts`, and `src/domain/nxn/validate.ts` (`checkNxNEntry`, used for every size from 5 up; `src/domain/fiveByFive/validate.ts` is a one-line entry point).
+- Notation: `src/domain/fourByFour/notation.ts` (kept for the 4×4 tests) and `src/domain/nxn/notation.ts` → `formatMoveN`, which the application uses for every size.
+- Pure cube mathematics shared by validation and solving lives in `src/domain/nxn/`: `engine.ts` (sticker permutation tables), `orbits.ts` (piece and orbit structure), `invariants.ts` (scheme, corner and wing parities), `applyMoves.ts` and `example.ts`.
 
 ## Start and render
 
@@ -24,8 +25,8 @@ are called out explicitly. Update this document when an execution path changes.
 ## Enter and inspect a cube
 
 1. Selecting a size in `App` calls `src/domain/nxn/cube.ts` → `createNxNCube`, replaces the entry, and recreates the viewport. Selecting a palette button sets `selectedColor`.
-2. A canvas pointer event calls `CubeRenderer.handlePointer` → `src/rendering/pickFacelet.ts` → `pickFacelet`. The closest sticker supplies its canonical facelet address.
-3. The viewport callback forwards the address to `App` → `paint` → `src/domain/cube/inputState.ts` → `paintFacelet`. It checks the address using `faceletToCoordinates` for 3×3 or `toNxNCoordinates` for 4×4 and returns a copied state with one facelet changed.
+2. A canvas pointer event calls `CubeRenderer.handlePointer` → scene `pick`, which raycasts the sticker instances and maps the hit instance to its canonical facelet address.
+3. The viewport callback forwards the address to `App` → `paint` → `src/domain/cube/inputState.ts` → `paintFacelet`. It checks the address using `faceletToCoordinates` for 3×3 or `toNxNCoordinates` for larger cubes and returns a copied state with one facelet changed.
 4. React renders the new state. `App` calls `countColors`; the viewport effect calls `CubeRenderer.setState` → scene `setState` to update stickers and unassigned markers.
 5. A view-control button calls `CubeViewport.rotate` → `CubeRenderer.rotate`. Animation frames rotate the scene group, then the completion callback unlocks controls. This does not apply a puzzle move.
 
@@ -33,19 +34,21 @@ are called out explicitly. Update this document when an execution path changes.
 
 1. The Solve button calls `App.startSolve` → `validateThreeByThree` for 3×3. It calls `src/domain/threeByThree/validate.ts` → `validateCube`, which checks facelets and colors, calls `centerMapping` and `normalizeColors` in `src/domain/cube/centerMapping.ts`, then checks pieces, orientation, and parity. Invalid input displays guidance and stops.
 2. For 4×4, `App` computes `src/domain/fourByFour/validate.ts` → `check4Entry`; `startSolve` passes that status to `validateFourByFour` and stops if it is not `counts-ok`. These are preliminary checks, not a formal proof of reachability.
-3. In the local 5×5 preview, `App` calls `src/domain/fiveByFive/validate.ts` → `check5Entry` and `validateFiveByFive`. These checks are preliminary and a valid entry may still exceed the solver's search bounds.
-4. For a permitted entry, `startSolve` constructs a worker and calls `src/solver/workerClient.ts` → `runSolverWorker`, `runFourSolverWorker`, or `runFiveSolverWorker` → `runWorker`. `runWorker` posts the request and sets timeout and failure handlers.
-4. **Worker boundary:** `src/workers/solver.worker.ts` receives the message and calls `src/solver/solveRequest.ts` → `handleSolveRequest`.
-5. **3×3 branch:** `handleSolveRequest` → `src/solver/threeByThree/solver.ts` → `solveCube` validates again, checks `isSolved`, and converts via `toFaceletString`. It calls the local `@turnwise/cube-solver`, converts its moves, then calls `verifySolution` → `src/domain/cube/applyMove.ts` → `applyMove` for each move → `src/domain/cube/isSolved.ts` → `isSolved`. Only a verified result returns.
-6. **4×4 branch:** `handleSolveRequest` → `src/solver/fourByFour/solver.ts` → `solveFour`. It calls `check4Entry`, `isNxNSolved`, `solverLayout` and `src/solver/fourByFour/convert.ts` → `convertFourState`; then `vendor/cubesmith/src/puzzles/444/solve.ts` → `solve444`. The adapter converts its output and calls `verifyFourSolution` → `applyNxNMove` for each move → `isNxNSolved`. `handleSolveRequest` calls `verifyFourSolution` again before returning the response.
-7. The worker posts the success or failure. `runWorker` cleans up and settles its promise; `App.startSolve` stores verified moves for display or shows an error. A stale worker response is ignored.
+3. For 5×5 and larger, `App` computes `src/domain/nxn/validate.ts` → `checkNxNEntry` (memoized) and `validateLargeCube` maps its status to guidance. The checks are the complete cube invariants, and the stress tests confirm that every accepted state solves.
+4. For a permitted entry, `startSolve` constructs a worker and calls `src/solver/workerClient.ts` → `runSolverWorker`, `runFourSolverWorker`, or `runNxNSolverWorker` → `runWorker`. `runWorker` posts the request and sets timeout and failure handlers.
+5. **Worker boundary:** `src/workers/solver.worker.ts` receives the message and calls `src/solver/solveRequest.ts` → `handleSolveRequest`.
+6. **3×3 branch:** `handleSolveRequest` → `src/solver/threeByThree/solver.ts` → `solveCube` validates again, checks `isSolved`, and converts via `toFaceletString`. It calls the local `@turnwise/cube-solver`, converts its moves, then calls `verifySolution` → `src/domain/cube/applyMove.ts` → `applyMove` for each move → `src/domain/cube/isSolved.ts` → `isSolved`. Only a verified result returns.
+7. **4×4 branch:** `handleSolveRequest` → `src/solver/fourByFour/solver.ts` → `solveFour`. It calls `check4Entry`, `isNxNSolved`, `solverLayout` and `src/solver/fourByFour/convert.ts` → `convertFourState`; then `vendor/cubesmith/src/puzzles/444/solve.ts` → `solve444`. The adapter converts its output and calls `verifyFourSolution` → `applyNxNMove` for each move → `isNxNSolved`. `handleSolveRequest` calls `verifyFourSolution` again before returning the response.
+8. **N×N branch (5 ≤ N ≤ 20):** `handleSolveRequest` → `src/solver/nxn/solveNxN.ts` → `solveNxN`. It reads the sticker array with `NxNEngine.fromState`, derives the color scheme (`deriveScheme`: fixed centers for odd cubes, the UFR corner for even cubes) and the corner parity, then builds the target arrangement (`targetStickers`, one outer R turn when the corner parity is odd). `wingParities` finds wing orbits with odd permutation parity; each is corrected by one inner slice turn (`kickFor`). `reduction.ts` → `solveCenters` then repairs every center orbit and `solveWings` every wing orbit. Both pick, from the conjugation table of the orbit (`conjugator.ts` → `Conjugator`, built over the pure macro that `macros.ts` → `findBaseMacros` found), the 3-cycle `W⁻¹·M·W` that fixes the most pieces. `projectReduced` then reads the reduced 3×3 (corners, one wing per edge, one center), `src/solver/threeByThree/solver.ts` → `solveCube` solves it, and its face turns become outer-layer moves. `simplifyMoves` merges and normalizes the full sequence, and `replay` / `stickersSolved` check it on the whole cube before it returns.
+9. The worker posts the success or failure. `runWorker` cleans up and settles its promise; `App.startSolve` stores verified moves for display or shows an error. A stale worker response is ignored.
 
 ## Playback and reset
 
-1. The Next move button calls `App.nextMove` → `src/domain/nxn/cube.ts` → `applyNxNMove` to calculate the next state without committing it.
-2. `App.nextMove` calls the viewport handle → `CubeRenderer.animateMove` → scene `beginLayerTurn`. Animation frames call the layer's `setProgress`.
+1. The Next move button calls `App.nextMove` → `src/domain/nxn/applyMoves.ts` → `applyMovesFast` to calculate the next state without committing it.
+2. `App.nextMove` calls the viewport handle → `CubeRenderer.animateMove` → scene `beginLayerTurn`. Animation frames call the layer's `setProgress`, which rotates only the affected sticker and body instances.
 3. At the end of animation, `CubeRenderer.animateMove` calls layer `finish`, updates the displayed scene with the calculated state, and invokes the completion callback. Only then does `App` commit the state and increment the move index. It calls `isNxNSolved` after the last move and reports completion or a playback error.
-4. New Cube calls `App.newCube`, returning to a fresh 3×3 entry. On viewport unmount, its effect calls `CubeRenderer.dispose`, which stops animation, removes listeners and disposes scene and WebGL resources.
+4. Auto-play is an effect in `App` that calls `nextMove` again whenever an animation ends, so it still animates one move at a time. For solutions longer than 30 moves, Skip 10, Skip 100, and Go to move call `App.skipTo`, which applies the intervening moves with `applyMovesFast`, commits the state, and does not animate. The final-state check is the same.
+5. New Cube calls `App.newCube`, returning to a fresh 3×3 entry. On viewport unmount, its effect calls `CubeRenderer.dispose`, which stops animation, removes listeners and disposes scene and WebGL resources. Zoom in and Zoom out call `CubeRenderer.zoom`, which only moves the camera.
 
 ## Readability cleanup
 
@@ -55,26 +58,16 @@ The readability cleanup that introduced this document changed these runtime call
 - `src/solver/fourByFour/solver.ts` → `solveFour` and `verifyFourSolution` now call `src/domain/nxn/cube.ts` → `isNxNSolved` instead of the removed local `isFourSolved`. This affects the 4×4 solved shortcut and replay verification.
 - Other application and test edits in the cleanup add explanatory comments, clarify test variable names, or remove unused CSS selectors. They do not alter the execution path.
 
-The vendored solver remains a pinned upstream copy; its internal algorithms are reached through the adapter above. Production users cannot select 5×5 or a general NxN solver.
+The vendored solver remains a pinned upstream copy; its internal algorithms are reached through the adapter above. Sizes 5×5 through 20×20 use the project-owned reduction solver described above; the vendored solver is used for 4×4 only.
 
 ## M11 work in progress
 
-`src/domain/fiveByFive/notation.ts` provides `parseMove5` and `formatMove5` for the 5×5 outer, inner-slice, and wide turns. The parser is used by the internal edge search and tests; `App` uses the formatter for preview playback.
+## 5×5 to 20×20 update (M11 and M12)
 
-`src/domain/fiveByFive/reduce.ts` → `reduce5To3` checks color counts, calls `areFiveEdgesPaired`, checks reduced centers, extracts the 3×3 facelets, and calls `src/domain/threeByThree/validate.ts` → `validateCube`. It does not perform center reduction or edge pairing.
+The bounded 5×5 search modules (`centers.ts`, `edges.ts`, `reduce.ts`, `pieces.ts`, `reducedSolver.ts`, `notation.ts`) and the `?preview5` path were removed. Their role is now filled by:
 
-`src/solver/fiveByFive/reducedSolver.ts` → `solveReducedFive` calls `reduce5To3`, then `src/solver/threeByThree/solver.ts` → `solveCube`, converts the returned outer turns, and replays them with `applyNxNMove` → `isNxNSolved` on the full 5×5. This path is currently called by tests only and rejects unreduced states.
-
-`src/domain/fiveByFive/pieces.ts` → `pieces5` calls `toNxNCoordinates` to group stickers by physical cubie and classify center and edge orbits. Preliminary validation uses this mapping in the local preview and tests.
-
-`src/domain/fiveByFive/validate.ts` → `check5Entry` uses `pieces5`, `countColors`, and `centerMapping` to check necessary entry conditions. `wingIdentities` uses the sticker normals and positions to check wing handedness. The validator then projects fixed centers, middle edges, and corners to `validateCube` for 3×3 orientation and parity checks. This preliminary path is called by the local preview and tests; it does not prove complete 5×5 physical reachability.
-
-`src/solver/fiveByFive/centers.ts` → `findFiveCenterMoves` calls `check5Entry`, then searches center-only permutations computed from domain coordinates for a bounded set of outer and inner moves. It prunes branches using a misplaced-center lower bound and, for deeper searches, exact per-color X- and T-center pattern tables built by `centerDistances`. It replays a candidate with `applyNxNMove` → `areFiveCentersSolved` and returns moves or `null` on search exhaustion. It is reached through `solveFive` in the preview worker; it does not provide general center reduction.
-
-`src/solver/fiveByFive/edges.ts` → `findFiveEdgePairing` searches increasing numbers of applications of one center-restoring sequence and its inverse, in 24 cube orientations with outer-turn setups, within a node budget. It skips states already explored with at least as many remaining steps, then calls `verifyFiveEdgePairing`. The verifier calls `check5Entry` and `areFiveCentersSolved`, replays candidate moves with `applyNxNMove`, then checks `areFiveCentersSolved` and `areFiveEdgesPaired`. It is reached through `solveFive` in the preview worker; its limited coverage does not provide general edge pairing.
-
-`src/solver/fiveByFive/solver.ts` → `solveFive` calls `check5Entry` → `findFiveCenterMoves` → `findFiveEdgePairing` → `solveReducedFive`, applying each stage's moves to a copy. It replays the combined moves against the original with `applyNxNMove` → `isNxNSolved`. Bounded search exhaustion throws. This path is reached by the local preview worker and by tests.
-
-## Local 5×5 preview path changed in this update
-
-In a development build opened with `?preview5`, `src/app/App.tsx` → `App` exposes the 5×5 option. `App.startSolve` calls `validateFiveByFive` with `check5Entry(cube).status`, then `src/solver/workerClient.ts` → `runFiveSolverWorker` → `runWorker`. `src/workers/solver.worker.ts` → `handleSolveRequest` in `src/solver/solveRequest.ts` now dispatches size 5 to `src/solver/fiveByFive/solver.ts` → `solveFive`. After its full-cube replay succeeds, the worker returns moves to `App`; `App` renders them with `formatMove5` and sends each one through the existing `nextMove` → `CubeRenderer.animateMove` → `applyNxNMove` playback path. The exact changed functions are `App`, `validateFiveByFive`, `runFiveSolverWorker`, and `handleSolveRequest`. The 5×5 size remains absent from production builds.
+- `src/domain/nxn/engine.ts` → `NxNEngine`: sticker permutation tables for every layer turn, built once per size from `rotateClockwise`; tests compare it sticker by sticker with `applyNxNMove`.
+- `src/domain/nxn/orbits.ts` → `NxNStructure`: pieces, mates and the orbits that layer turns cannot mix.
+- `src/solver/nxn/macros.ts` → `findBaseMacros`: searches the commutators `[U, S·Q·S']` for sequences whose complete effect is one 3-cycle of centers or three whole wings.
+- `src/solver/nxn/conjugator.ts` → `Conjugator`: a breadth-first table of the images of three stickers; the word `W` found for a triple gives the pure macro `W⁻¹·M·W` on exactly that triple.
+- `src/rendering/cubeScene.ts` → `createCubeScene`: four instanced meshes plus a core block, so draw calls do not grow with the cube size.

@@ -12,7 +12,6 @@ import type { CubeState } from '../domain/cube/types';
 import type { Move } from '../domain/cube/moves';
 import type { Face } from '../domain/cube/faces';
 import { createCubeScene } from './cubeScene';
-import { pickFacelet } from './pickFacelet';
 import type { LayerMove } from '../domain/nxn/cube';
 
 /** Own the canvas, camera, pointer handling, and animation lifecycle. */
@@ -64,7 +63,7 @@ export class CubeRenderer {
       -((event.clientY - rect.top) / rect.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(pointer, this.camera);
-    const address = pickFacelet(this.raycaster, this.cube.facelets);
+    const address = this.cube.pick(this.raycaster);
     if (address) this.onSelect(address);
   };
 
@@ -77,6 +76,15 @@ export class CubeRenderer {
   /** Highlight the layer described by the next move. */
   setHighlight(face: Face | null, layer = 0, width = 1) {
     this.cube.setHighlight(face, layer, width);
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Move the camera closer (factor < 1) or further away, within sensible limits. */
+  zoom(factor: number) {
+    const length = this.camera.position.length();
+    const next = Math.min(Math.max(length * factor, 5), 16);
+    this.camera.position.multiplyScalar(next / length);
+    this.camera.lookAt(0, 0, 0);
     this.renderer.render(this.scene, this.camera);
   }
 

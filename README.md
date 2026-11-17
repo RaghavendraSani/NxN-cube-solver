@@ -4,9 +4,9 @@ CubeSolver is an offline browser application for manually recreating and solving
 
 ## Project status
 
-The 3×3 and 4×4 editors, locally calculated replay-verified solutions, and interactive move playback are implemented. The owner has approved milestones 9 and 10; known limitations are recorded below and in the roadmap.
+The 3×3 through 20×20 editors, locally calculated replay-verified solutions, and interactive move playback are implemented. The owner has approved milestones 9 and 10; milestones 11 and 12 are implemented and awaiting the owner's browser verification (see the roadmap for what has and has not been run).
 
-The current implementation supports 3×3×3 and 4×4×4. Support for 5×5×5 through 20×20×20 is planned incrementally.
+Sizes 3×3×3 and 4×4×4 use their original solvers. Sizes 5×5×5 through 20×20×20 use a project-owned reduction solver: it repairs every center and wing group with exact 3-cycles, solves the reduced 3×3×3 with the existing solver, and replays the whole solution on the full cube before showing it. Solutions are correct, not short: about 360 moves on a 5×5 and about 9,700 on a 20×20. Playback offers auto-play, skip, and jump controls for long solutions.
 
 The 4×4 validator checks color counts, corner identity and twist, and wing identities. Its implementation has not been formally verified, and the solver may time out or fail on a valid state. Every solution is independently replayed before display. Switching cube size clears the current entry.
 
@@ -63,7 +63,7 @@ npm install
 npm run dev
 ```
 
-To manually inspect the unfinished 5×5 workflow, open `http://localhost:5173/?preview5` in the development build and select **5×5 preview**. This option is absent from the production build. The bounded solver can finish short test scrambles but does not support arbitrary legal 5×5 states yet.
+Every size can be tried without a physical cube: choose a size and press **Load example** to fill in a legal scrambled cube. Entering a 20×20 by hand means painting 2,400 squares, so the example loader is the practical way to inspect large sizes; **Zoom in** and **Zoom out** help when painting them.
 
 Quality checks will be exposed through scripts similar to:
 
